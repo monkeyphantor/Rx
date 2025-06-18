@@ -127,7 +127,7 @@ struct Graphics{
         world.component<Neon::Component::FlyingCamera>("FlyingCamera").set<Neon::Component::FlyingCamera>({
             glm::vec3(0.f, 0.f, 0.f),
             glm::vec2(0.f, 0.f),
-            10.f,
+            40.f,
             0.01f,
             Neon::Core::windowHeight/static_cast<float>(Neon::Core::windowWidth),
             0.1f,
@@ -241,6 +241,7 @@ struct Actors{
     }
 };
 
+struct GameRunning{};
 
 struct Move{
     Move(flecs::world& world){
@@ -251,7 +252,7 @@ struct Move{
                 auto transform = it.field<Neon::Component::Transform>(0);
                 for(auto i : it){
                     transform[i].angle += 0.01f;
-                    transform[i].translation = 10.f * glm::vec3(0.f,glm::sin(transform[i].angle+transform[i].translation[2]/10.0),0.f);
+                    transform[i].translation = glm::vec3(transform[i].translation[0],10.f*glm::sin(transform[i].angle/2.f + transform[i].translation[0]*transform[i].translation[2]),transform[i].translation[2]);
                 }    
             }
         });
@@ -274,13 +275,17 @@ int main(){
 
     world.import<Graphics>();
     world.import<Actors>();
-    world.import<Move>();
     
     
 
     while(Neon::Core::updateCore() && Neon::Input::keyEsc.down == false)
     {
         Neon::Core::getSwapchainImageIndex();
+
+        if(Neon::Input::keyX.pressed && world.has<GameRunning>() == false)
+        {
+            world.import<Move>();
+        }
 
         world.progress();
     }
