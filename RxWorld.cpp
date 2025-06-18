@@ -127,11 +127,11 @@ struct Graphics{
         world.component<Neon::Component::FlyingCamera>("FlyingCamera").set<Neon::Component::FlyingCamera>({
             glm::vec3(0.f, 0.f, 0.f),
             glm::vec2(0.f, 0.f),
-            40.f,
+            800.f,
             0.01f,
             Neon::Core::windowHeight/static_cast<float>(Neon::Core::windowWidth),
             0.1f,
-            1000.f
+            100000.f
         });
 
         world.system<Neon::Component::FlyingCamera>().kind(flecs::OnUpdate).each([](flecs::entity e, Neon::Component::FlyingCamera& camera){
@@ -228,8 +228,8 @@ struct Actors{
                 4, 5, 1, 1, 0, 4     // Bottom face
             };
 
-        for(int i = 0; i < 20; i++){
-            for(int j = 0; j < 20; j++){
+        for(int i = 0; i < 100; i++){
+            for(int j = 0; j < 100; j++){
                 auto e = world.entity();
                 e.set<Neon::Component::Mesh>({cubeVertices, cubeIndices});
                 e.add<Neon::Component::ColorMesh>();
@@ -252,7 +252,7 @@ struct Move{
                 auto transform = it.field<Neon::Component::Transform>(0);
                 for(auto i : it){
                     transform[i].angle += 0.01f;
-                    transform[i].translation = glm::vec3(transform[i].translation[0],10.f*glm::sin(transform[i].angle/2.f + transform[i].translation[0]*transform[i].translation[2]),transform[i].translation[2]);
+                    transform[i].translation = glm::vec3(transform[i].translation[0],20.f*glm::sin(transform[i].angle * 20 + transform[i].translation[2]/100.f),transform[i].translation[2]);
                 }    
             }
         });

@@ -127,7 +127,7 @@ namespace Core
 
          VkApplicationInfo appInfo;
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.apiVersion = VK_API_VERSION_1_3;
+        appInfo.apiVersion = VK_API_VERSION_1_4;
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pApplicationName = applicationName.data();
@@ -136,7 +136,8 @@ namespace Core
 
         VkInstanceCreateInfo createInfo;
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        createInfo.flags = 0;
+        createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        createInfo.pNext = NULL;
         createInfo.pApplicationInfo = &appInfo;
 
         
@@ -144,10 +145,11 @@ namespace Core
 
         uint32_t glfwExtensionsCount;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
-        std::vector<const char*> instanceExtensions(glfwExtensionsCount+1);
+        std::vector<const char*> instanceExtensions(glfwExtensionsCount+2);
         memcpy(instanceExtensions.data(), glfwExtensions, glfwExtensionsCount*sizeof(const char*));
         instanceExtensions[glfwExtensionsCount] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
-        createInfo.enabledExtensionCount = glfwExtensionsCount+1;
+        instanceExtensions[glfwExtensionsCount+1] = VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME;
+        createInfo.enabledExtensionCount = instanceExtensions.size();
         createInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());

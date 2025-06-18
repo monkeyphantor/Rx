@@ -7,6 +7,9 @@ project(Rx_Test)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+link_directories("/opt/homebrew/lib")
+include_directories("/opt/homebrew/include")
+
 add_subdirectory(./core)
 add_subdirectory(./component)
 
@@ -21,3 +24,6 @@ target_include_directories(Rx_Test PRIVATE ./core ./component )
 
 # Link the library
 target_link_libraries(Rx_Test PRIVATE neon_core)
+
+
+target_link_libraries(Rx_Test PRIVATE glm)
