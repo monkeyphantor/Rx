@@ -2,14 +2,14 @@
 
 #include "global.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
         inline std::string applicationName;
         inline VkInstance vkInstance;
 
-        #ifdef NEON_DEBUG
+        #ifdef RX_DEBUG
 
         // write down which validationLayers you want
         inline std::vector<const char*> validationLayers = 

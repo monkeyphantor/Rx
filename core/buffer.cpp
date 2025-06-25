@@ -2,8 +2,9 @@
 #include "physicalDevice.hpp"
 #include "device.hpp"
 #include "allocator.hpp"
+#include "mutex.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -24,7 +25,8 @@ namespace Neon
             VmaAllocationCreateInfo allocInfo{};
             allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
 
-            NEON_CHECK_VULKAN
+            RX_VK_MUTEX(
+            RX_CHECK_VULKAN
             (vmaCreateBuffer
             (vmaAllocator,
             &createInfo,
@@ -33,17 +35,18 @@ namespace Neon
             &buffer.vmaAllocation,
             &buffer.vmaAllocationInfo),
             "createBuffer",
-            "vmaCreateBuffer")
+            "vmaCreateBuffer"))
 
             return buffer;
         }
 
         void destroyBuffer(Buffer buffer)
         {
+            RX_VK_MUTEX(
             vmaDestroyBuffer
             (vmaAllocator,
             buffer.vkBuffer,
-            buffer.vmaAllocation);
+            buffer.vmaAllocation))
         }
 
         BufferInterface createBufferInterface
@@ -64,7 +67,9 @@ namespace Neon
             allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
                             VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-            NEON_CHECK_VULKAN
+        
+            RX_VK_MUTEX(
+            RX_CHECK_VULKAN
             (vmaCreateBuffer
             (vmaAllocator,
             &createInfo,
@@ -73,7 +78,7 @@ namespace Neon
             &buffer.vmaAllocation,
             &buffer.vmaAllocationInfo),
             "createBufferInterface",
-            "vmaCreateBuffer")
+            "vmaCreateBuffer"))
 
             buffer.pMemory = buffer.vmaAllocationInfo.pMappedData;
 
@@ -82,10 +87,11 @@ namespace Neon
 
         void destroyBufferInterface(BufferInterface buffer)
         {
+            RX_VK_MUTEX(
             vmaDestroyBuffer
             (vmaAllocator,
             buffer.vkBuffer,
-            buffer.vmaAllocation);
+            buffer.vmaAllocation));
         }
 /*
         Buffer createBuffer
@@ -101,7 +107,7 @@ namespace Neon
             createInfo.size = numberElements * elementSize;
             createInfo.usage = usage;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateBuffer
             (vkDevice,
             &createInfo,
@@ -125,7 +131,7 @@ namespace Neon
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             vkPhysicalDevice);
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkAllocateMemory
             (vkDevice,
             &allocInfo,
@@ -134,7 +140,7 @@ namespace Neon
             "createBuffer",
             "vkAllocateMemory")
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkBindBufferMemory
             (vkDevice,
             buffer.vkBuffer,
@@ -172,7 +178,7 @@ namespace Neon
             createInfo.size = numberElements * elementSize;
             createInfo.usage = usage;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateBuffer
             (vkDevice,
             &createInfo,
@@ -197,7 +203,7 @@ namespace Neon
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
             vkPhysicalDevice);
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkAllocateMemory
             (vkDevice,
             &allocInfo,
@@ -206,7 +212,7 @@ namespace Neon
             "createBufferInterface",
             "vkAllocateMemory")
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkBindBufferMemory
             (vkDevice,
             buffer.vkBuffer,
@@ -215,7 +221,7 @@ namespace Neon
             "createBufferInterface",
             "vkBindBufferMemory")
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkMapMemory
             (vkDevice,
             buffer.vkDeviceMemory,

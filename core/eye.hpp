@@ -3,7 +3,7 @@
 #include "global.hpp"
 #include "buffer.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {

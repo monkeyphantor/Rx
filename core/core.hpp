@@ -25,7 +25,7 @@
 #include "renderPass.hpp"
 #include "framebuffers.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {

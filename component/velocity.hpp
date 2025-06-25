@@ -3,7 +3,7 @@
 #include "global.hpp"
 #include "world.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Component
     {

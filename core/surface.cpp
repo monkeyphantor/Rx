@@ -2,13 +2,13 @@
 #include "window.hpp"
 #include "instance.hpp"
 
-namespace Neon
+namespace Rx
 {
 namespace Core
 {
     void createSurface()
     {
-        NEON_CHECK_VULKAN
+        RX_CHECK_VULKAN
         (glfwCreateWindowSurface
         (vkInstance,
         pGLFWwindow,
@@ -17,8 +17,8 @@ namespace Core
         "createSurface",
         "glfwCreateWindowSurface")
 
-        #ifdef NEON_DEBUG
-        NEON_LOGI("VkSurfaceKHR" , "created", "")
+        #ifdef RX_DEBUG
+        RX_LOGI("VkSurfaceKHR" , "created", "")
         #endif
     }
 

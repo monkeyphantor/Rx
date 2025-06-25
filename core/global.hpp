@@ -1,7 +1,7 @@
 #pragma once
 
 
-#define NEON_DEBUG
+#define RX_DEBUG
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -27,6 +27,7 @@
 #include <functional>
 #include <typeinfo>
 #include <algorithm>
+#include <thread>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -35,33 +36,34 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "glm/gtc/quaternion.hpp"
 
-#define NEON_LOGI(X, Y, Z)\
+#define RX_LOGI(X, Y, Z)\
 {\
-    printf("Info@NEON: %s :: %s :: %s\n", X, Y, Z);\
+    printf("Info@RX: %s :: %s :: %s\n", X, Y, Z);\
 }
 
-#define NEON_LOGE(X, Y, Z)\
+#define RX_LOGE(X, Y, Z)\
 {\
-    printf("Error@NEON: %s :: %s :: %s\n", X, Y, Z);\
+    printf("Error@RX: %s :: %s :: %s\n", X, Y, Z);\
     exit(1);\
 }
 
-#define NEON_CHECK_VULKAN(VulkanExpression, Function, VulkanFunction)\
+#define RX_CHECK_VULKAN(VulkanExpression, Function, VulkanFunction)\
 {\
     VkResult vkRes;\
     if((vkRes = VulkanExpression) != VK_SUCCESS)\
     {\
-        printf("Error@NEON: %s :: %s\n", Function, VulkanFunction);\
+        printf("Error@RX: %s :: %s\n", Function, VulkanFunction);\
         printf("Vulkan Error Code: %d\n", vkRes);\
         exit(1);\
     }\
 }
 
 
-#define NEON_ASSERT(Expression, Class, Funktion, Message)\
+#define RX_ASSERT(Expression, Class, Funktion, Message)\
 {\
     if(!(Expression))\
     {\
-        NEON_LOGE(Class, Funktion, Message)\
+        RX_LOGE(Class, Funktion, Message)\
     }\
 }
+

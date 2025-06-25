@@ -5,8 +5,8 @@
 #include "../core/command.hpp"
 #include "../core/buffer.hpp"
 #include "mesh.hpp"
-
-namespace Neon
+#include "../flecs/include/flecs.h"
+namespace Rx
 {
 
     namespace Component
@@ -37,3 +37,6 @@ namespace Neon
 
     }
 }
+
+void mesh_component_on_add(flecs::entity e, Rx::Component::Mesh& mesh, Rx::Component::ColorMesh& colorMesh);
+void mesh_component_on_remove(flecs::entity e, Rx::Component::ColorMesh& colorMesh);

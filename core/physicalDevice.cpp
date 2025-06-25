@@ -3,7 +3,7 @@
 #include "instance.hpp"
 #include "surface.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -108,7 +108,7 @@ namespace Neon
             
             if(numberPropertiess == 0)
             {
-                NEON_LOGE("pickVkPhysicalDevice", "no VkQueueFamilyPropertiess", "found")
+                RX_LOGE("pickVkPhysicalDevice", "no VkQueueFamilyPropertiess", "found")
             }
 
             std::vector<VkQueueFamilyProperties> propertiess(numberPropertiess);
@@ -149,7 +149,7 @@ namespace Neon
                 }
             }
             
-            NEON_LOGE("pickQueueFamilyIndex", "no suitable queueFamilyIndex", "found")
+            RX_LOGE("pickQueueFamilyIndex", "no suitable queueFamilyIndex", "found")
         }
 
         void pickVkSurfaceFormatKHR()
@@ -182,7 +182,7 @@ namespace Neon
 
             if(numberPresentModes == 0)
             {
-                NEON_LOGE("pickVkPresentModeKHR", "no VkPresentModeKHR", "found")
+                RX_LOGE("pickVkPresentModeKHR", "no VkPresentModeKHR", "found")
             }
 
             std::vector<VkPresentModeKHR> modes(numberPresentModes);
@@ -298,7 +298,7 @@ namespace Neon
                     return vkFormats[i];
                 }    
             }
-            NEON_LOGE("findSupportedFormat", "no suitable VkFormat found", "")
+            RX_LOGE("findSupportedFormat", "no suitable VkFormat found", "")
         }
 
         void pickPhysicalDevice()
@@ -309,7 +309,7 @@ namespace Neon
 
             if(count == 0)
             {
-                NEON_LOGE("pickPhysicalDevice", "no vkPhysicalDevices", "found")
+                RX_LOGE("pickPhysicalDevice", "no vkPhysicalDevices", "found")
             }
 
             std::vector<VkPhysicalDevice> devices(count);
@@ -330,7 +330,7 @@ namespace Neon
 
             if(!found)
             {
-                NEON_LOGE("pickPhysicalDevice", "no VkPhysicalDevice fullfills requirements", "")
+                RX_LOGE("pickPhysicalDevice", "no VkPhysicalDevice fullfills requirements", "")
             }
 
             pickQueueFamilyIndex();
@@ -356,8 +356,8 @@ namespace Neon
             depthVkFormats,
             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
             
-            #ifdef NEON_DEBUG
-            NEON_LOGI("PhysicalDevice", vkPhysicalDeviceProperties.deviceName, "picked")
+            #ifdef RX_DEBUG
+            RX_LOGI("PhysicalDevice", vkPhysicalDeviceProperties.deviceName, "picked")
             #endif
         }
 
@@ -376,7 +376,7 @@ namespace Neon
                 }
             }
 
-            NEON_LOGE("findMemoryType", "failed to find suitable memory type", "")
+            RX_LOGE("findMemoryType", "failed to find suitable memory type", "")
         }
     }
 }

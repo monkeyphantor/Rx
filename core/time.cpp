@@ -1,6 +1,6 @@
 #include "time.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Time
     {

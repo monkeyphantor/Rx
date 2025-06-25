@@ -3,7 +3,7 @@
 #include "device.hpp"
 #include "allocator.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -38,7 +38,7 @@ namespace Neon
             allocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
             allocInfo.priority = 1.f;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vmaCreateImage
             (vmaAllocator,
             &createInfo,
@@ -64,7 +64,7 @@ namespace Neon
             ivCreateInfo.subresourceRange.baseArrayLayer = 0;
             ivCreateInfo.subresourceRange.layerCount = 1;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateImageView
             (vkDevice,
             &ivCreateInfo,
@@ -116,7 +116,7 @@ namespace Neon
             createInfo.usage = usage;
             createInfo.samples = samples;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateImage
             (vkDevice,
             &createInfo,
@@ -140,7 +140,7 @@ namespace Neon
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             vkPhysicalDevice);
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkAllocateMemory
             (vkDevice,
             &allocInfo,
@@ -149,7 +149,7 @@ namespace Neon
             "createImage",
             "vkAllocateMemory")
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkBindImageMemory
             (vkDevice,
             image.vkImage,
@@ -173,7 +173,7 @@ namespace Neon
             ivCreateInfo.subresourceRange.baseArrayLayer = 0;
             ivCreateInfo.subresourceRange.layerCount = 1;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateImageView
             (vkDevice,
             &ivCreateInfo,

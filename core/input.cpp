@@ -2,7 +2,7 @@
 #include "window.hpp"
 #include "time.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Input
     {
@@ -39,11 +39,11 @@ namespace Neon
         {
             buttonLeft.down = (glfwGetMouseButton(Core::pGLFWwindow, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
             buttonLeft.pressed = (buttonLeft.down && buttonLeft.lastPressed > buttonPressTime);
-            buttonLeft.lastPressed = (buttonLeft.lastPressed + Time::deltaTime) * buttonLeft.pressed;
+            buttonLeft.lastPressed = (buttonLeft.lastPressed + Time::deltaTime) * !buttonLeft.pressed;
 
             buttonRight.down = (glfwGetMouseButton(Core::pGLFWwindow, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
             buttonRight.pressed = (buttonRight.down && buttonRight.lastPressed > buttonPressTime);
-            buttonRight.lastPressed = (buttonRight.lastPressed + Time::deltaTime) * buttonRight.pressed;
+            buttonRight.lastPressed = (buttonRight.lastPressed + Time::deltaTime) * !buttonRight.pressed;
 
         }
 

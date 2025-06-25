@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-project(neon)
+project(rx)
 
-add_library(neon_core STATIC
+add_library(rx_core STATIC
 window.hpp
 window.cpp
 time.hpp
@@ -46,4 +46,10 @@ shader.cpp
 core.hpp
 core.cpp)
 
-target_link_libraries(neon_core PUBLIC glfw vulkan)
+
+target_link_libraries(rx_core PUBLIC
+    # External dependencies
+    Vulkan::Vulkan  # The imported target for Vulkan
+    glm::glm        # The imported target for GLM
+    glfw            # The imported target for GLFW
+)

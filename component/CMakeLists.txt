@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-project(neon)
+project(rx)
 
-add_library(neon_component STATIC
+add_library(rx_component STATIC
 transform.hpp
 transform.cpp
 colorMesh.hpp
@@ -16,5 +16,12 @@ mesh.hpp
 mesh.cpp
 )
 
-target_include_directories(neon_component PUBLIC ../core)
-target_link_libraries(neon_component PUBLIC glfw vulkan neon_core)
+target_include_directories(rx_component PUBLIC ../core ../flecs)
+target_link_libraries(rx_component PUBLIC
+    # External dependencies
+    Vulkan::Vulkan  # The imported target for Vulkan
+    glm::glm        # The imported target for GLM
+    glfw            # The imported target for GLFW
+    rx_flecs
+    rx_core
+)

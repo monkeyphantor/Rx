@@ -1,7 +1,7 @@
 #include "semaphore.hpp"
 #include "device.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -13,7 +13,7 @@ namespace Neon
             VkSemaphoreCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateSemaphore
             (vkDevice,
             &createInfo,

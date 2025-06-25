@@ -1,7 +1,7 @@
 #include "fence.hpp"
 #include "device.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -14,7 +14,7 @@ namespace Neon
             createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
             createInfo.flags = flags;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateFence
             (vkDevice,
             &createInfo,

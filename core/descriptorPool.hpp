@@ -2,14 +2,14 @@
 
 #include "global.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
-        inline uint32_t maxNumberUniformBuffers{10000};
-        inline uint32_t maxNumberStorageBuffers{10000};
-        inline uint32_t maxNumberCombinedImageSamplers{10000};
-        inline uint32_t maxNumberDescriptorSets{10000};
+        inline uint32_t maxNumberUniformBuffers{20000};
+        inline uint32_t maxNumberStorageBuffers{20000};
+        inline uint32_t maxNumberCombinedImageSamplers{20000};
+        inline uint32_t maxNumberDescriptorSets{20000};
         
         inline VkDescriptorPool vkDescriptorPool;
 

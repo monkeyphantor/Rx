@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <glm/glm.hpp>
-namespace Neon
+namespace Rx
 {
     namespace Vertex
     {

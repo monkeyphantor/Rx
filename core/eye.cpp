@@ -1,7 +1,7 @@
 #include "eye.hpp"
 #include "window.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {

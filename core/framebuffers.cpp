@@ -4,7 +4,7 @@
 #include "swapchain.hpp"
 #include "renderPass.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -50,7 +50,7 @@ namespace Neon
                 createInfo.height = vkExtent2D.height;
                 createInfo.layers = 1;
 
-                NEON_CHECK_VULKAN
+                RX_CHECK_VULKAN
                 (vkCreateFramebuffer
                 (vkDevice,
                 &createInfo,
@@ -60,8 +60,8 @@ namespace Neon
                 "vkCreateFramebuffer")
             }
 
-            #ifdef NEON_DEBUG
-            NEON_LOGI("Framebuffers", "created", "")
+            #ifdef RX_DEBUG
+            RX_LOGI("Framebuffers", "created", "")
             #endif
         }
         

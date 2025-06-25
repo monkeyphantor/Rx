@@ -5,7 +5,7 @@
 #include "semaphore.hpp"
 #include "command.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -32,7 +32,7 @@ namespace Neon
             createInfo.clipped = VK_TRUE;
             createInfo.oldSwapchain = nullptr;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateSwapchainKHR
             (vkDevice,
             &createInfo,
@@ -43,7 +43,7 @@ namespace Neon
 
             uint32_t numberImages;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkGetSwapchainImagesKHR
             (vkDevice,
             swapchain.vkSwapchainKHR,
@@ -54,12 +54,12 @@ namespace Neon
 
             if(numberImages == 0)
             {
-                NEON_LOGE("createSwapchain", "number VkSwapchainKHR images", "zero")
+                RX_LOGE("createSwapchain", "number VkSwapchainKHR images", "zero")
             }
 
             swapchain.vkImages.resize(numberImages);
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkGetSwapchainImagesKHR
             (vkDevice,
             swapchain.vkSwapchainKHR,
@@ -87,7 +87,7 @@ namespace Neon
                 ivCreateInfo.subresourceRange.baseArrayLayer = 0;
                 ivCreateInfo.subresourceRange.layerCount = 1;
 
-                NEON_CHECK_VULKAN
+                RX_CHECK_VULKAN
                 (vkCreateImageView
                 (vkDevice,
                 &ivCreateInfo,
@@ -100,8 +100,8 @@ namespace Neon
             swapchain.vkSemaphore[0] = createSemaphore();
             swapchain.vkSemaphore[1] = createSemaphore();
 
-            #ifdef NEON_DEBUG
-            NEON_LOGI("Swapchain", "created", "")
+            #ifdef RX_DEBUG
+            RX_LOGI("Swapchain", "created", "")
             #endif        
         }
 
@@ -129,12 +129,12 @@ namespace Neon
 
         void getSwapchainImageIndex()
         {
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkAcquireNextImageKHR
             (vkDevice,
             swapchain.vkSwapchainKHR,
             UINT64_MAX,
-            swapchain.vkSemaphore[Neon::Core::commandIndex],
+            swapchain.vkSemaphore[Rx::Core::commandIndex],
             nullptr,
             &swapchain.imageIndex),
             "getSwapchainImageIndex",

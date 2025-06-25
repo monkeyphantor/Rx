@@ -3,8 +3,8 @@
 #include "device.hpp"
 #include "semaphore.hpp"
 #include "fence.hpp"
-
-namespace Neon
+#include "mutex.hpp"
+namespace Rx
 {
     namespace Core
     {
@@ -17,7 +17,7 @@ namespace Neon
             createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
             createInfo.queueFamilyIndex = queueFamilyIndex;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateCommandPool
             (vkDevice,
             &createInfo,
@@ -33,7 +33,7 @@ namespace Neon
             allocInfo.commandBufferCount = 1;
             allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkAllocateCommandBuffers
             (vkDevice,
             &allocInfo,
@@ -67,7 +67,8 @@ namespace Neon
 
         void waitForCommand(Command command)
         {
-            NEON_CHECK_VULKAN
+            RX_VK_MUTEX(
+            RX_CHECK_VULKAN
             (vkWaitForFences
             (vkDevice,
             1, &command.vkFence,
@@ -75,12 +76,12 @@ namespace Neon
             "waitForCommand",
             "vkWaitForFences")
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkResetFences
             (vkDevice,
             1, &command.vkFence),
             "waitForCommand",
-            "vkResetFences")
+            "vkResetFences"));
         }
 
         
@@ -90,7 +91,7 @@ namespace Neon
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkBeginCommandBuffer
             (command.vkCommandBuffer,
             &beginInfo),
@@ -100,7 +101,7 @@ namespace Neon
 
         void endCommand(Command command)
         {
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkEndCommandBuffer
             (command.vkCommandBuffer),
             "endCommand",
@@ -117,7 +118,7 @@ namespace Neon
             createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
             createInfo.queueFamilyIndex = queueFamilyIndex;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateCommandPool
             (vkDevice,
             &createInfo,
@@ -133,7 +134,7 @@ namespace Neon
             allocInfo.commandBufferCount = 1;
             allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkAllocateCommandBuffers
             (vkDevice,
             &allocInfo,
@@ -167,7 +168,7 @@ namespace Neon
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkBeginCommandBuffer
             (command.vkCommandBuffer,
             &beginInfo),
@@ -177,7 +178,7 @@ namespace Neon
 
         void endSingleCommand(SingleCommand command)
         {
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkEndCommandBuffer
             (command.vkCommandBuffer),
             "endSingleCommand",

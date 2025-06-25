@@ -1,7 +1,7 @@
 #include "device.hpp"
 #include "physicalDevice.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -25,7 +25,7 @@ namespace Neon
             createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()); 
             createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateDevice
             (vkPhysicalDevice,
             &createInfo,
@@ -34,8 +34,8 @@ namespace Neon
             "createDevice",
             "vkCreateDevice")
 
-            #ifdef NEON_DEBUG
-            NEON_LOGI("Device", "created", "")
+            #ifdef RX_DEBUG
+            RX_LOGI("Device", "created", "")
             #endif
         }
 

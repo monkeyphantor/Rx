@@ -1,7 +1,7 @@
 #include "core.hpp"
+#include "mutex.hpp"
 
-
-namespace Neon
+namespace Rx
 {
 namespace Core
 {
@@ -56,11 +56,11 @@ namespace Core
 
     bool updateCore()
     {
-        Neon::Core::commandIndex = (Neon::Core::commandIndex + 1) % 2;
-        Neon::Core::waitForCommand(Neon::Core::command[Neon::Core::commandIndex]);
+        Rx::Core::commandIndex = (Rx::Core::commandIndex + 1) % 2;
+        Rx::Core::waitForCommand(Rx::Core::command[Rx::Core::commandIndex]);
 
         glfwPollEvents();
-
+        
         Time::updateTime();
         Input::updateInput();
 

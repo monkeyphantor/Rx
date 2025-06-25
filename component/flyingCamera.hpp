@@ -5,7 +5,7 @@
 #include "../core/input.hpp"
 #include "../core/eye.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Component
     {
@@ -19,13 +19,14 @@ namespace Neon
             float fov;
             float nearClip;
             float farClip;
+            glm::vec3 direction;
 
         public:
             void update()
             {
                 angle += Input::cursor.deltaPosition * (1.f*Input::buttonRight.down) * rotationSpeed;
 
-                glm::vec3 direction =
+                direction =
                 //glm::vec3 
                 //(sin(angle[0])*cos(angle[1]),
                 //sin(angle[1]),
@@ -46,6 +47,22 @@ namespace Neon
 
                 Core::updateEye(position, direction, fov, nearClip, farClip);
             }
+            // new static lookAt()
+            static glm::vec2 lookAt(const glm::vec3& position,
+                                    const glm::vec3& viewTarget)
+            {
+                // 1) direction from cam → target
+                glm::vec3 dir = glm::normalize(viewTarget - position);
+
+                // 2) yaw  = rotation around Y so that forward (-Z) points towards dir
+                float yaw   = std::atan2(dir.x, -dir.z);
+
+                // 3) pitch = rotation around X so that forward (in Y) points towards dir
+                float horizontalDist = std::sqrt(dir.x*dir.x + dir.z*dir.z);
+                float pitch = std::atan2(dir.y, horizontalDist);
+
+                return glm::vec2(yaw, pitch);
+            }   
         };
     }
 }

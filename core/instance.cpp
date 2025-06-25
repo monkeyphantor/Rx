@@ -1,12 +1,12 @@
 #include "instance.hpp"
 
-namespace Neon
+namespace Rx
 {
 namespace Core
 {
 
 
-#ifdef NEON_DEBUG
+#ifdef RX_DEBUG
 
     VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback
     (VkDebugUtilsMessageSeverityFlagBitsEXT severity,
@@ -27,7 +27,7 @@ namespace Core
     {
         uint32_t layerCount;
         
-        NEON_CHECK_VULKAN
+        RX_CHECK_VULKAN
         (vkEnumerateInstanceLayerProperties
         (&layerCount, NULL),
         "checkValidationLayerSupport",
@@ -35,7 +35,7 @@ namespace Core
         
         std::vector<VkLayerProperties> availableLayers(layerCount);
         
-        NEON_CHECK_VULKAN
+        RX_CHECK_VULKAN
         (vkEnumerateInstanceLayerProperties
         (&layerCount, availableLayers.data()),
         "checkValidationLayerSupport",
@@ -56,7 +56,7 @@ namespace Core
 
             if(!layerFound)
             {
-                NEON_LOGE("checkValidationLayerSupport", "no validationLayerSupport for", validationLayers[i])
+                RX_LOGE("checkValidationLayerSupport", "no validationLayerSupport for", validationLayers[i])
             }
         }
     }
@@ -69,7 +69,7 @@ namespace Core
 
         if(func == NULL)
         {
-            NEON_LOGE("createVkDebugUtilsMessengerEXT", "vkGetInstanceProcAddr()", "failed");
+            RX_LOGE("createVkDebugUtilsMessengerEXT", "vkGetInstanceProcAddr()", "failed");
         }
 
         VkDebugUtilsMessengerCreateInfoEXT vkDebugUtilsMessengerCreateInfoEXT;
@@ -94,7 +94,7 @@ namespace Core
         NULL,
         &vkDebugUtilsMessengerEXT) != VK_SUCCESS)
         {
-            NEON_LOGE("createVkDebugUtilsMessengerEXT", "vkCreateDebugUtilsMessengerEXT()", "failed");
+            RX_LOGE("createVkDebugUtilsMessengerEXT", "vkCreateDebugUtilsMessengerEXT()", "failed");
         }
 
     }
@@ -107,7 +107,7 @@ namespace Core
 
         if(func == NULL)
         {
-            NEON_LOGE("destroyVkDebugUtilsMessengerEXT", "vkGetInstanceProcAddr()", "failed");
+            RX_LOGE("destroyVkDebugUtilsMessengerEXT", "vkGetInstanceProcAddr()", "failed");
         }
         
         func
@@ -121,7 +121,7 @@ namespace Core
 
     void createInstance()
     {
-        #ifdef NEON_DEBUG
+        #ifdef RX_DEBUG
         checkValidationLayerSupport();
         #endif
 
@@ -131,7 +131,7 @@ namespace Core
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pApplicationName = applicationName.data();
-        appInfo.pEngineName = "NEON";
+        appInfo.pEngineName = "RX";
         appInfo.pNext = NULL;
 
         VkInstanceCreateInfo createInfo;
@@ -141,7 +141,7 @@ namespace Core
         createInfo.pApplicationInfo = &appInfo;
 
         
-        #ifdef NEON_DEBUG
+        #ifdef RX_DEBUG
 
         uint32_t glfwExtensionsCount;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
@@ -186,27 +186,27 @@ namespace Core
 
         #endif
 
-        NEON_CHECK_VULKAN
+        RX_CHECK_VULKAN
         (vkCreateInstance
         (&createInfo, NULL,
         &vkInstance),
         "createInstance",
         "vkCreateInstance")
 
-        #ifdef NEON_DEBUG
+        #ifdef RX_DEBUG
         
-        NEON_LOGI("VkInstance", "created", "")
+        RX_LOGI("VkInstance", "created", "")
         
         createVkDebugUtilsMessenger();
 
-        NEON_LOGI("VkDebugUtilsMessengerEXT", "created", "")
+        RX_LOGI("VkDebugUtilsMessengerEXT", "created", "")
         
         #endif
     }
 
     void destroyInstance()
     {
-        #ifdef NEON_DEBUG
+        #ifdef RX_DEBUG
         destroyVkDebugUtilsMessenger();
         #endif
 

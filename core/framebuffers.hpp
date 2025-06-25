@@ -3,7 +3,7 @@
 #include "global.hpp"
 #include "image.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {

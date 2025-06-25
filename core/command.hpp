@@ -2,7 +2,7 @@
 
 #include "global.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -21,8 +21,8 @@ namespace Neon
             VkFence vkFence;
         };
 
-        inline Neon::Core::SingleCommand single_command;
-        inline Neon::Core::Command command[2];
+        inline Rx::Core::SingleCommand single_command;
+        inline Rx::Core::Command command[2];
 
         inline int commandIndex{0};
 

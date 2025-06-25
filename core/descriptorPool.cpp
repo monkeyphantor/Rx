@@ -1,7 +1,7 @@
 #include "descriptorPool.hpp"
 #include "device.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -40,7 +40,7 @@ namespace Neon
             createInfo.maxSets = maxNumberDescriptorSets;
             createInfo.pNext = NULL;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateDescriptorPool
             (vkDevice,
             &createInfo,
@@ -49,8 +49,8 @@ namespace Neon
             "createVkDescriptorPool",
             "vkCreateDescriptorPool")
             
-            #ifdef NEON_DEBUG
-            NEON_LOGI("DescriptorPool", "created", "")
+            #ifdef RX_DEBUG
+            RX_LOGI("DescriptorPool", "created", "")
             #endif            
         }
 

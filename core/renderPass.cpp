@@ -4,7 +4,7 @@
 #include "swapchain.hpp"
 #include "framebuffers.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -95,7 +95,7 @@ namespace Neon
             createInfo.dependencyCount = 1;
             createInfo.pDependencies = &subpassDep;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateRenderPass
             (vkDevice,
             &createInfo,
@@ -104,8 +104,8 @@ namespace Neon
             "createRenderPass",
             "vkCreateRenderPass")
 
-            #ifdef NEON_DEBUG
-                NEON_LOGI("RenderPass", "created", "")
+            #ifdef RX_DEBUG
+                RX_LOGI("RenderPass", "created", "")
             #endif
         }
 

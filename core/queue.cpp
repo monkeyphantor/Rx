@@ -3,7 +3,7 @@
 #include "device.hpp"
 #include "swapchain.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -15,8 +15,8 @@ namespace Neon
             0,
             &vkQueue);
 
-            #ifdef NEON_DEBUG
-            NEON_LOGI("Queue", "got", "")
+            #ifdef RX_DEBUG
+            RX_LOGI("Queue", "got", "")
             #endif
         }
 
@@ -37,7 +37,7 @@ namespace Neon
             submitInfo.signalSemaphoreCount = 0;
             submitInfo.pSignalSemaphores = nullptr;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkQueueSubmit
             (vkQueue,
             1,
@@ -46,7 +46,7 @@ namespace Neon
             "submitSingleCommand",
             "vkQueueSubmit")
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkWaitForFences
             (vkDevice,1,
             &command.vkFence,
@@ -54,7 +54,7 @@ namespace Neon
             "submitSingleCommand",
             "vkWaitForFences")
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkResetFences
             (vkDevice,
             1,
@@ -74,13 +74,13 @@ namespace Neon
             submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             submitInfo.pWaitDstStageMask = stageFlags.data();
             submitInfo.waitSemaphoreCount = 1;
-            submitInfo.pWaitSemaphores = &swapchain.vkSemaphore[Neon::Core::commandIndex];
+            submitInfo.pWaitSemaphores = &swapchain.vkSemaphore[Rx::Core::commandIndex];
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &command.vkCommandBuffer;
             submitInfo.signalSemaphoreCount = 1;
             submitInfo.pSignalSemaphores = &command.vkSemaphore;
             
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkQueueSubmit
             (vkQueue,
             1,
@@ -100,7 +100,7 @@ namespace Neon
             presentInfo.pSwapchains = &swapchain.vkSwapchainKHR;
             presentInfo.pImageIndices = &swapchain.imageIndex;
 
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkQueuePresentKHR
             (vkQueue,
             &presentInfo),

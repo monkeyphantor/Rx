@@ -1,7 +1,7 @@
 #include "shader.hpp"
 #include "device.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -11,7 +11,7 @@ namespace Neon
 
             if(!file.is_open())
             {
-                NEON_LOGE("Shader", "failed to open", filePath.data())
+                RX_LOGE("Shader", "failed to open", filePath.data())
             }
 
             size_t fileSize = static_cast<size_t>(file.tellg());
@@ -32,7 +32,7 @@ namespace Neon
             createInfo.codeSize = static_cast<uint32_t>(code.size());
             createInfo.pCode = reinterpret_cast<uint32_t*>(code.data());
             
-            NEON_CHECK_VULKAN
+            RX_CHECK_VULKAN
             (vkCreateShaderModule
             (vkDevice,
             &createInfo,

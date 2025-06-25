@@ -1,6 +1,6 @@
 #include "window.hpp"
 
-namespace Neon
+namespace Rx
 {
     namespace Core
     {
@@ -22,7 +22,7 @@ namespace Neon
                 if((pGLFWwindow = glfwCreateWindow
                 (mode->width, mode->height, windowTitle.data(), monitor, nullptr)) == nullptr)
                 {
-                    NEON_LOGE("createWindow", "glfwCreateWindow", "failed")
+                    RX_LOGE("createWindow", "glfwCreateWindow", "failed")
                 }
             }
             else
@@ -32,15 +32,15 @@ namespace Neon
                 if((pGLFWwindow = glfwCreateWindow
                 (static_cast<int>(windowWidth), static_cast<int>(windowHeight), windowTitle.data(), nullptr, nullptr)) == nullptr)
                 {
-                    NEON_LOGE("createWindow", "glfwCreateWindow", "failed")
+                    RX_LOGE("createWindow", "glfwCreateWindow", "failed")
                 }
             }
 
             glfwSetInputMode(pGLFWwindow, GLFW_STICKY_KEYS, GLFW_TRUE);
             glfwSetInputMode(pGLFWwindow, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
 
-            #ifdef NEON_DEBUG
-            NEON_LOGI("Window", "created", "")
+            #ifdef RX_DEBUG
+            RX_LOGI("Window", "created", "")
             #endif
         }
     
