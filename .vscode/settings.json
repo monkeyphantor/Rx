@@ -1,0 +1,20 @@
+{
+      // point VS Code at the Windows CMake.exe install
+  "cmake.cmakePath": "C:\\Program Files\\CMake\\bin\\cmake.exe",
+  "cmake.generator": "Visual Studio 17 2022",
+  "cmake.generatorPlatform": "x64",
+  "cmake.configureSettings": {
+    // optional: hard-code the exact cl.exe if you need
+  "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe",
+  "CMAKE_TOOLCHAIN_FILE": "C:/Users/robry/source/repos2/vcpkg/scripts/buildsystems/vcpkg.cmake",
+  "VCPKG_TARGET_TRIPLET": "x64-windows"
+},
+"files.associations": {
+  "memory": "cpp",
+  "mutex": "cpp",
+  "shared_mutex": "cpp",
+  "type_traits": "cpp",
+  "iostream": "cpp"
+}
+}
+
