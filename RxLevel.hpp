@@ -2,6 +2,7 @@
 #include "./application/gameWorld.hpp"
 #include "./application/level.hpp"
 #include "RxLevel2.hpp"
+
 struct Actors;
 struct FireballSystem;
 struct Move;
@@ -90,16 +91,34 @@ struct Actors {
             4, 5, 1, 1, 0, 4     // Bottom face
         };
 
-        for (int i = 0; i < 0; i++) 
+
+        auto batchRenderEntity = world.entity("BatchRender");
+        Rx::Component::MeshArray meshArray;
+        meshArray.addMesh("Cube", cubeVertices, cubeIndices);
+        batchRenderEntity.set<Rx::Component::MeshArray>(meshArray);
+        batchRenderEntity.add<Rx::Component::ColorMeshArray>();
+
+        Rx::Component::IndirectBuffer indirectBuffer;
+        indirectBuffer.maxNumberCommands = 30000;
+        indirectBuffer.numberCommands = 0;
+        batchRenderEntity.set<Rx::Component::IndirectBuffer>(indirectBuffer);
+
+        Rx::Component::ColorMeshInstanceBuffer colorMeshInstanceBuffer;
+        colorMeshInstanceBuffer.maxNumberInstances = 30000;
+        batchRenderEntity.set<Rx::Component::ColorMeshInstanceBuffer>(colorMeshInstanceBuffer);
+
+        batchRenderEntity.add<Rx::Component::ColorArrayGraphics>();
+
+
+        auto rel = world.lookup("ColorMeshArrayInstanceRelation");
+
+        for (int i = 0; i < 100; i++) 
         {
-            for (int j = 0; j < 30; j++)
+            for (int j = 0; j < 100; j++)
             {
                 auto e = world.entity();
-                e.set<Rx::Component::Mesh>({ cubeVertices, cubeIndices });
-				auto size = e.get<Rx::Component::Mesh>().vertices.size();    
-                std::cout << "Loading Actors: size:" << size << std::endl;
-                e.add<Rx::Component::ColorMesh>();
-                e.add<Rx::Component::ColorGraphics>();
+                e.add(rel, batchRenderEntity);
+                e.set<VkDrawIndexedIndirectCommand>(batchRenderEntity.get<Rx::Component::MeshArray>().meshNameToCommand.at("Cube"));
                 e.set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, glm::vec3(0.f, 1.f, 0.f), glm::vec3(i * 3.f, 0.f, j * 3.f) });
                 e.add<LevelAsset>();
             }

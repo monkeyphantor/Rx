@@ -18,5 +18,13 @@ namespace Rx
         public:
             VkShaderModule createShaderModule();
         };
+
+        inline Shader colorMeshVertexShader("./shader/testShader3.vert.spv");
+        inline Shader colorMeshFragmentShader("./shader/testShader3.frag.spv");
+
+        inline Shader colorMeshArrayVertexShader{"shader/colorMeshArrayVertexShader.vert.spv"};
+        inline Shader colorMeshArrayFragmentShader{"shader/testShader3.frag.spv"};
+
+
     }
 }

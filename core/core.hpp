@@ -25,6 +25,10 @@
 #include "renderPass.hpp"
 #include "framebuffers.hpp"
 
+#include "descriptorSetLayouts.hpp"
+#include "pipelineLayouts.hpp"
+#include "pipelines.hpp"
+
 namespace Rx
 {
     namespace Core

@@ -14,6 +14,16 @@ velocity.hpp
 velocity.cpp
 mesh.hpp
 mesh.cpp
+meshArray.hpp
+meshArray.cpp
+colorArrayGraphics.hpp
+colorArrayGraphics.cpp
+colorMeshArray.hpp
+colorMeshArray.cpp
+colorMeshInstanceBuffer.hpp
+colorMeshInstanceBuffer.cpp
+indirectBuffer.hpp
+indirectBuffer.cpp
 )
 
 target_include_directories(rx_component PUBLIC ../core ../flecs)

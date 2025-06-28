@@ -30,10 +30,18 @@ namespace Core
         createSwapchain();
         createRenderPass();
         createFramebuffers();
+
+        createDescriptorSetLayouts();
+        createPipelineLayouts();
+        createPipelines();
     }
 
     void destroyCore()
     {
+        destroyPipelines();
+        destroyPipelineLayouts();
+        destroyDescriptorSetLayouts();
+
         destroyFramebuffers();
         destroyRenderPass();
         destroySwapchain();

@@ -43,6 +43,12 @@ framebuffers.hpp
 framebuffers.cpp
 shader.hpp
 shader.cpp
+descriptorSetLayouts.hpp
+descriptorSetLayouts.cpp
+pipelineLayouts.hpp
+pipelineLayouts.cpp
+pipelines.hpp
+pipelines.cpp
 core.hpp
 core.cpp)
 

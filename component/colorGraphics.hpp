@@ -33,37 +33,21 @@ namespace Rx
 
         protected:
             Core::BufferInterface modelBuffer;
-            VkDescriptorSetLayout vkDescriptorSetLayout; 
             VkDescriptorSet vkDescriptorSet;
-            VkPipelineLayout vkPipelineLayout;
-            VkPipeline vkPipeline;
-
+           
         public:
             void createModelBuffer();
             void destroyModelBuffer();
             void createDescriptorSet();
             void destroyDescriptorSet();
-            void createGraphicsPipeline
-            (Core::Shader& vertexShader, 
-            Core::Shader& fragmentShader);
-            void destroyGraphicsPipeline();
-
+            
         public:
              const VkDescriptorSet& getDescriptorSet()
             {
                 return vkDescriptorSet;
             }
 
-            const VkPipelineLayout& getPipelineLayout()
-            {
-                return vkPipelineLayout;
-            }
-
-            const VkPipeline& getGraphicsPipeline()
-            {
-                return vkPipeline;
-            }
-
+           
             void setModelBuffer(glm::mat4 transform)
             {
                 ModelBuffer::Color buffer;
@@ -76,8 +60,7 @@ namespace Rx
 }
 
 
-inline Rx::Core::Shader vertexShader("./shader/testShader3.vert.spv");
-inline Rx::Core::Shader fragmentShader("./shader/testShader3.frag.spv");
+
 
 void graphics_component_on_add(flecs::entity e, Rx::Component::ColorGraphics& graphics);
 

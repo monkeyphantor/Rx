@@ -1,0 +1,26 @@
+// .vscode/launch.json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(Windows) Launch My Flecs App", // A friendly name for the dropdown
+            "type": "cppvsdbg",                    // MUST be "cppvsdbg" for MSVC
+            "request": "launch",                   // We want to launch a new process
+
+            // IMPORTANT: Change this path to point to your executable!
+            // ${workspaceFolder} is the root of your project folder.
+            // The rest of the path depends on your CMake output directory.
+            "program": "${workspaceFolder}/build/Debug/RxWorld.exe",
+
+            "args": [],                            // Command-line arguments to pass to your app
+            "stopAtEntry": false,                  // Set to true to pause at the very first line of main()
+            
+            // The working directory where your app will run.
+            // This is important if your app needs to load files (like shaders or assets).
+            "cwd": "${workspaceFolder}",
+
+            "environment": [],
+            "console": "externalTerminal"          // 'internalConsole' or 'integratedTerminal' are also options
+        }
+    ]
+}

@@ -15,6 +15,12 @@ namespace Rx
             queueCreateInfo.queueCount = 1;
             queueCreateInfo.pQueuePriorities = &priority;
 
+
+            // Add this when creating the device:
+            VkPhysicalDeviceVulkan11Features vulkan11Features{};
+            vulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+            vulkan11Features.shaderDrawParameters = VK_TRUE;
+
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
             createInfo.enabledLayerCount = 0;
@@ -24,6 +30,7 @@ namespace Rx
             createInfo.pEnabledFeatures = &vkPhysicalDeviceFeatures;
             createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()); 
             createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+            createInfo.pNext = &vulkan11Features; // Chain the Vulkan 1.1 features
 
             RX_CHECK_VULKAN
             (vkCreateDevice

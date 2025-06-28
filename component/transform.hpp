@@ -14,7 +14,7 @@ namespace Rx
             glm::vec3 translation;
 
 
-            glm::mat4 getTransformMatrix()
+            glm::mat4 getTransformMatrix() const
             {
                 glm::mat4 transform = glm::scale(glm::mat4(1.f), scale);
                 transform = glm::rotate(transform, angle, axis);
