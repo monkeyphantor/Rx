@@ -14,6 +14,8 @@ project(RxProject VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+
+
 # Find the Vulkan SDK. The official SDK sets an environment variable that CMake uses.
 find_package(Vulkan REQUIRED)
 
@@ -48,6 +50,8 @@ target_link_libraries(RxWorld PRIVATE
     glm::glm        # The imported target for GLM
     glfw            # The imported target for GLFW
 )
+
+
 
 # Optional: Organize projects in Visual Studio into folders for clarity.
 set_property(TARGET RxWorld PROPERTY FOLDER "Executables")

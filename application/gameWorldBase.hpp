@@ -55,6 +55,7 @@ namespace Rx{
 
         //render entities
         flecs::entity colorMeshArrayInstanceRelation;
+        flecs::entity postUpdate;
         flecs::entity preRender;
         flecs::entity onRenderBegin;
         flecs::entity onRender;
@@ -134,8 +135,10 @@ namespace Rx{
             
             // Set up render entities
             colorMeshArrayInstanceRelation = world.entity("ColorMeshArrayInstanceRelation");
+            postUpdate = world.entity("PostUpdate");
+            postUpdate.depends_on(flecs::OnUpdate);
             preRender = world.entity("PreRender");
-            preRender.depends_on(flecs::OnUpdate);
+            preRender.depends_on(postUpdate);
             onRenderBegin = world.entity("OnRenderBegin");
             onRenderBegin.depends_on(preRender);
             onRender = world.entity("OnRender");
@@ -143,7 +146,20 @@ namespace Rx{
             onRenderEnd = world.entity("OnRenderEnd");
             onRenderEnd.depends_on(onRender);
 
-            
+            world.system("IndirectBufferReset")
+            .with<Rx::Component::IndirectBuffer>()
+            .kind(postUpdate)
+            .with<RenderRunning>().src(game)
+            .run([](flecs::iter& it) { // Use .run() instead of .each()
+
+                while(it.next()) {
+                    // This system iterates over all entities with the IndirectBuffer component.
+                    auto indirectBuffers = it.field<Rx::Component::IndirectBuffer>(0);
+                    for (auto i : it) {
+                        indirectBuffers[i].numberCommands = 0; // Reset the command count for the indirect buffer.
+                    }
+                }
+            });
                 
             world.system("ColorMeshArrayUpdate")
                 .with<Rx::Component::Transform>()
