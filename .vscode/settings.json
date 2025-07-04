@@ -6,7 +6,7 @@
   "cmake.configureSettings": {
     // optional: hard-code the exact cl.exe if you need
   "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe",
-  "CMAKE_TOOLCHAIN_FILE": "C:/Users/robry/source/repos2/vcpkg/scripts/buildsystems/vcpkg.cmake",
+  "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/../vcpkg/scripts/buildsystems/vcpkg.cmake",
   "VCPKG_TARGET_TRIPLET": "x64-windows"
 },
 "files.associations": {
@@ -90,6 +90,6 @@
   "xtr1common": "cpp",
   "xtree": "cpp",
   "xutility": "cpp"
-}
+},
 }
 

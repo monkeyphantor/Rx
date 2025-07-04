@@ -49,6 +49,8 @@ pipelineLayouts.hpp
 pipelineLayouts.cpp
 pipelines.hpp
 pipelines.cpp
+Light.hpp
+Light.cpp
 core.hpp
 core.cpp)
 

@@ -5,25 +5,29 @@ project(rx)
 add_library(rx_component STATIC
 transform.hpp
 transform.cpp
-colorMesh.hpp
-colorMesh.cpp
-colorGraphics.hpp
-colorGraphics.cpp
+ColorMesh.hpp
+ColorMesh.cpp
+VkColorMesh.hpp
+VkColorMesh.cpp
+VkColorModelBuffer.hpp
+VkColorModelBuffer.cpp
+VkColorModelDescriptorSet.hpp
+VkColorModelDescriptorSet.cpp
 flyingCamera.hpp
 velocity.hpp
 velocity.cpp
-mesh.hpp
-mesh.cpp
 meshArray.hpp
 meshArray.cpp
 colorArrayGraphics.hpp
 colorArrayGraphics.cpp
 colorMeshArray.hpp
 colorMeshArray.cpp
-colorMeshInstanceBuffer.hpp
-colorMeshInstanceBuffer.cpp
+VkInstancedColorModelBuffer.hpp
+VkInstancedColorModelBuffer.cpp
 indirectBuffer.hpp
 indirectBuffer.cpp
+VkInstancedColorModelDescriptorSet.hpp
+VkInstancedColorModelDescriptorSet.cpp
 )
 
 target_include_directories(rx_component PUBLIC ../core ../flecs)

@@ -11,6 +11,8 @@ gameWorldBase.cpp
 loadingScreen.hpp
 gameWorld.hpp
 gameWorld.cpp
+RxDefaultLoadingScreen.hpp
+RxDefaultGameWorld.hpp
 )
 
 target_include_directories(rx_app PUBLIC ../core ../flecs ../component)

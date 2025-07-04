@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../flecs/include/flecs.h"
-#include "../application/application.hpp"
+
 
 namespace Rx {
 

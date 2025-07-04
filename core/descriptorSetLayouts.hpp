@@ -21,5 +21,10 @@ namespace Rx
         void createColorMeshArrayDescriptorSetLayout();
         void destroyColorMeshArrayDescriptorSetLayout();
 
+        inline VkDescriptorSetLayout instancedColorMeshDescriptorSetLayout;
+        void createInstancedColorMeshDescriptorSetLayout();
+        void destroyInstancedColorMeshDescriptorSetLayout();
+
+
     }
 }

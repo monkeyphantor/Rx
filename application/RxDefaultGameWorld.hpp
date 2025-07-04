@@ -1,16 +1,15 @@
 #pragma once
-#include "application/application.hpp"
-#include "component/flyingCamera.hpp"
-#include "core/window.hpp"
+#include "application.hpp"
+#include "../component/flyingCamera.hpp"
 namespace Rx {
 
-	class RxGameWorld : public GameWorld
+	class RxDefaultGameWorld : public GameWorld
 	{
 	public:
-		RxGameWorld(Application& app, flecs::world& world) : GameWorld(app, world) {
+		RxDefaultGameWorld(Application& app, flecs::world& world) : GameWorld(app, world) {
 		}
 
-		virtual ~RxGameWorld() = default;
+		virtual ~RxDefaultGameWorld() = default;
 
 
 		virtual void loadGlobal() override {

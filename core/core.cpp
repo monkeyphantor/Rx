@@ -31,6 +31,8 @@ namespace Core
         createRenderPass();
         createFramebuffers();
 
+        createLightBuffers();
+
         createDescriptorSetLayouts();
         createPipelineLayouts();
         createPipelines();
@@ -42,6 +44,8 @@ namespace Core
         destroyPipelineLayouts();
         destroyDescriptorSetLayouts();
 
+        destroyLightBuffers();
+        
         destroyFramebuffers();
         destroyRenderPass();
         destroySwapchain();

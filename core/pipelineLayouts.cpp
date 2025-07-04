@@ -11,12 +11,14 @@ namespace Rx
         {
             createColorMeshPipelineLayout();
             createColorMeshArrayPipelineLayout();
+            createInstancedColorMeshPipelineLayout();
         }
 
         void destroyPipelineLayouts()
         {
-            destroyColorMeshPipelineLayout();
+            destroyInstancedColorMeshPipelineLayout();
             destroyColorMeshArrayPipelineLayout();
+            destroyColorMeshPipelineLayout();
         }
 
         void createColorMeshPipelineLayout(){
@@ -65,6 +67,33 @@ namespace Rx
             RX_VK_MUTEX(
             vkDestroyPipelineLayout(Core::vkDevice, colorMeshArrayPipelineLayout, nullptr);
             );
+        }
+
+
+        void createInstancedColorMeshPipelineLayout(){
+            VkPipelineLayoutCreateInfo layoutInfo{};
+            layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            layoutInfo.setLayoutCount = 1;
+            layoutInfo.pSetLayouts = &instancedColorMeshDescriptorSetLayout;
+
+            RX_VK_MUTEX(
+            RX_CHECK_VULKAN(
+            vkCreatePipelineLayout
+            (Core::vkDevice, 
+            &layoutInfo, 
+            nullptr, 
+            &instancedColorMeshPipelineLayout),
+            "createInstancedColorMeshPipelineLayout",
+            "vkCreatePipelineLayout"
+            ));
+        }
+
+        void destroyInstancedColorMeshPipelineLayout(){
+            RX_VK_MUTEX(
+            vkDestroyPipelineLayout
+            (Core::vkDevice, 
+            instancedColorMeshPipelineLayout, 
+            nullptr););
         }
     }
 } // namespace Rx::Core

@@ -1,8 +1,6 @@
 #pragma once
-#include "../core/global.hpp"
-
-#include "mesh.hpp"
-
+#include "global.hpp"
+#include "vertex.hpp"
 namespace Rx
 {
 

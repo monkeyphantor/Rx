@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "name": "Win32",
+      "includePath": [
+        "${workspaceFolder}/core",
+        "${workspaceFolder}/component",
+        "${workspaceFolder}/application",
+        "${workspaceFolder}/flecs/include",
+        "${workspaceFolder}/shape",
+        "${workspaceFolder}/examples/example1",
+        "${workspaceFolder}/examples/example2",
+        "${workspaceFolder}/../vcpkg/installed/x64-windows/include"
+      ],
+      "defines": [],
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-msvc-x64"
+    }
+  ],
+  "version": 4
+}

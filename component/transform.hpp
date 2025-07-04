@@ -24,6 +24,11 @@ namespace Rx
 
                 return transform;
             }
+
+            glm::quat toRotation() const
+            {
+                return glm::angleAxis(angle, axis);
+            }
         };
     }
 }

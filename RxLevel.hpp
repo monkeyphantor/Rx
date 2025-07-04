@@ -65,7 +65,7 @@ struct Actors {
  Actors(flecs::world& world) {
         world.module<Actors>();
 
-        // --- Define Mesh Data ---
+        // --- Define ColorMesh Data ---
 
         // Generic cube indices, can be reused for all cube-based meshes
         std::vector<uint32_t> cubeIndices = {
@@ -100,6 +100,7 @@ struct Actors {
         meshArray.addMesh("Dirt", dirtVertices, cubeIndices);
         meshArray.addMesh("Trunk", trunkVertices, cubeIndices);
         meshArray.addMesh("Leaves", leavesVertices, cubeIndices);
+        //batchRenderEntity.add<LevelAsset>();
         batchRenderEntity.set<Rx::Component::MeshArray>(meshArray);
         batchRenderEntity.add<Rx::Component::ColorMeshArray>();
 
@@ -108,9 +109,9 @@ struct Actors {
         indirectBuffer.numberCommands = 0;
         batchRenderEntity.set<Rx::Component::IndirectBuffer>(indirectBuffer);
 
-        Rx::Component::ColorMeshInstanceBuffer colorMeshInstanceBuffer;
+        Rx::Component::VkInstancedColorModelBuffer colorMeshInstanceBuffer;
         colorMeshInstanceBuffer.maxNumberInstances = 1000000;
-        batchRenderEntity.set<Rx::Component::ColorMeshInstanceBuffer>(colorMeshInstanceBuffer);
+        batchRenderEntity.set<Rx::Component::VkInstancedColorModelBuffer>(colorMeshInstanceBuffer);
 
         batchRenderEntity.add<Rx::Component::ColorArrayGraphics>();
 
@@ -119,7 +120,7 @@ struct Actors {
 
         // --- Generate World ---
 
-        int landscapeSize = 400;
+        int landscapeSize = 100;
         for (int i = -landscapeSize; i <= landscapeSize; i++) {
             for (int j = -landscapeSize; j <= landscapeSize; j++) {
                 auto grass = world.entity();
@@ -134,7 +135,7 @@ struct Actors {
                     auto dirt = world.entity();
                     dirt.add(rel, batchRenderEntity)
                         .set<VkDrawIndexedIndirectCommand>(commands.at("Dirt"))
-                        .set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, {0,1,0}, glm::vec3(i, -1.f, j) })
+                        .set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, {0,1,0}, glm::vec3(i, 0.f, j) })
                         .add<LevelAsset>();
                 }
             }
@@ -143,7 +144,7 @@ struct Actors {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> distrib(-landscapeSize, landscapeSize);
-        int treeCount = 10000;
+        int treeCount = 1000;
 
         for (int i = 0; i < treeCount; ++i) {
             float x = static_cast<float>(distrib(gen));
@@ -269,9 +270,9 @@ struct FireballSystem {
             glm::vec3 velocity = camera.direction * speed;
 
             
-            fireball.set<Rx::Component::Mesh>({ cubeVertices, cubeIndices });
-            fireball.add<Rx::Component::ColorMesh>();
-            fireball.add<Rx::Component::ColorGraphics>();
+            fireball.set<Rx::Component::ColorMesh>({ cubeVertices, cubeIndices });
+            fireball.add<Rx::Component::VkColorMesh>();
+            fireball.add<Rx::Component::VkColorModelDescriptorSet>();
             fireball.set<Rx::Component::Transform>(fireballTransform);
             fireball.set<Fireball>({ velocity });
             fireball.add<LevelAsset>();

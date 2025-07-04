@@ -8,7 +8,7 @@ namespace Rx
         {
             if (meshNameToCommand.find(name) != meshNameToCommand.end())
             {
-                RX_LOGE("MeshArray", "addMesh", ("Mesh with name " + name + " already exists.").c_str());
+                RX_LOGE("MeshArray", "addMesh", ("ColorMesh with name " + name + " already exists.").c_str());
             }
 
 

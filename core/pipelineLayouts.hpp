@@ -16,6 +16,10 @@ namespace Rx
         inline VkPipelineLayout colorMeshArrayPipelineLayout;
         void createColorMeshArrayPipelineLayout();
         void destroyColorMeshArrayPipelineLayout();
-        
+
+        inline VkPipelineLayout instancedColorMeshPipelineLayout;
+        void createInstancedColorMeshPipelineLayout();
+        void destroyInstancedColorMeshPipelineLayout();
+
     }
 }

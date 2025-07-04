@@ -27,31 +27,11 @@ find_package(glm REQUIRED)
 
 # --- Build Internal Libraries ---
 # Process the subdirectories to create our 'component_lib' and 'core_lib' targets.
-add_subdirectory(flecs)
-add_subdirectory(core)
-add_subdirectory(component)
-add_subdirectory(application)
-# --- Build The Main Executable ---
-# Define the main executable target, "RxWorld".
-add_executable(RxWorld main.cpp)
+add_subdirectory(./flecs)
+add_subdirectory(./core)
+add_subdirectory(./shape)
+add_subdirectory(./component)
+add_subdirectory(./application)
 
-
-# --- Link All Libraries ---
-# Link RxWorld against all the libraries it needs. Modern CMake uses imported targets
-# (like Vulkan::Vulkan, glm::glm, glfw) which also handle include directories automatically.
-target_link_libraries(RxWorld PRIVATE
-    # Our internal libraries
-    rx_core
-    rx_component
-    rx_flecs
-    rx_app
-    # External dependencies
-    Vulkan::Vulkan  # The imported target for Vulkan
-    glm::glm        # The imported target for GLM
-    glfw            # The imported target for GLFW
-)
-
-
-
-# Optional: Organize projects in Visual Studio into folders for clarity.
-set_property(TARGET RxWorld PROPERTY FOLDER "Executables")
+add_subdirectory(./examples/example1)
+add_subdirectory(./examples/example2)

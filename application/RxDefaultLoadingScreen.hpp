@@ -1,20 +1,21 @@
 #pragma once
-#include "./application/loadingScreen.hpp"
-#include "./component/flyingCamera.hpp"
-
+#include "loadingScreen.hpp"
+#include "flyingCamera.hpp"
+#include "VkColorMesh.hpp"
+#include "VkColorModelDescriptorSet.hpp"
 struct Actor;
 namespace Rx {
 
-    class RxLoadingScreen : public Rx::LoadingScreen {
+    class RxDefaultLoadingScreen : public Rx::LoadingScreen {
     public:
         // Constructor
-        RxLoadingScreen(Application& app, flecs::world& world) : Rx::LoadingScreen(app, world) {
+        RxDefaultLoadingScreen(Application& app, flecs::world& world) : Rx::LoadingScreen(app, world) {
             // Initialize the loading screen
             std::cout << "RxLoadingScreen initialized." << std::endl;
         }
 
         // Destructor
-        virtual ~RxLoadingScreen() = default;
+        virtual ~RxDefaultLoadingScreen() = default;
 
         virtual void loadGlobal() override {
             LoadingScreen::loadGlobal();
@@ -45,9 +46,9 @@ namespace Rx {
          
             
             world.system<Rx::Component::Transform>()
-            .with<Rx::Component::Mesh>()
             .with<Rx::Component::ColorMesh>()
-            .with<Rx::Component::ColorGraphics>()
+            .with<Rx::Component::VkColorMesh>()
+            .with<Rx::Component::VkColorModelDescriptorSet>()
             .kind(flecs::OnUpdate)
             .each([&](Rx::Component::Transform& transform) {
                 // Rotate the cube around the Y-axis
@@ -98,10 +99,11 @@ struct Actor {
             for (int j = 0; j < 1; j++)
             {
                 auto e = world.entity();
-                e.set<Rx::Component::Mesh>({ cubeVertices, cubeIndices });
+                e.set<Rx::Component::ColorMesh>({ cubeVertices, cubeIndices });
                 std::cout << "Loading Actor" << std::endl;
-                e.add<Rx::Component::ColorMesh>();
-                e.add<Rx::Component::ColorGraphics>();
+                e.add<Rx::Component::VkColorMesh>();
+                e.add<Rx::Component::VkColorModelBuffer>();
+                e.add<Rx::Component::VkColorModelDescriptorSet>();
                 e.set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, glm::vec3(0.f, 1.f, 0.f), glm::vec3(i * 3.f, 0.f, j * 3.f) });
             }
         }

@@ -1,13 +1,5 @@
   #pragma once
 
- #include "../core/command.hpp"
- #include "../core/renderpass.hpp"
- #include "../core/mutex.hpp"
- #include "../flecs/include/flecs.h"
-#include "level.hpp"
-#include "../component/colorGraphics.hpp"
-#include "../component/colorMesh.hpp"
-#include "../component/transform.hpp"
 #include "gameWorldBase.hpp"
 
 struct LevelAsset {};
