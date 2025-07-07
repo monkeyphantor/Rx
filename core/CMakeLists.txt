@@ -51,6 +51,7 @@ pipelines.hpp
 pipelines.cpp
 Light.hpp
 Light.cpp
+Physics.hpp
 core.hpp
 core.cpp)
 

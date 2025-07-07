@@ -59,8 +59,8 @@ struct Actors {
         //Rx::Shape::ColorSphere sphere(1.f, 16, 16, glm::vec3(1.f, 0.f, 0.f));
 
 
-        for(int i = 0 ; i < 30; i++){
-            for(int j = 0; j < 30; j++){
+        for(int i = 0 ; i < 100; i++){
+            for(int j = 0; j < 100; j++){
                 auto e = world.entity();
                 e.set<Rx::Component::ColorMesh>({ cube.getVertices(), cube.getIndices() });
                 e.add<Rx::Component::VkColorMesh>();

@@ -12,7 +12,7 @@ struct ColorMeshInstance
     mat4 transform;
 };
 
-layout(binding = 1, std430) restrict readonly buffer ModelBuffer
+layout(binding = 3, std430) restrict readonly buffer ModelBuffer
 {
     ColorMeshInstance instances[];
 } modelBuffer;

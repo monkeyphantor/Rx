@@ -11,6 +11,8 @@ gameWorldBase.cpp
 loadingScreen.hpp
 gameWorld.hpp
 gameWorld.cpp
+PhysicsGameWorld.hpp
+PhysicsGameWorld.cpp
 RxDefaultLoadingScreen.hpp
 RxDefaultGameWorld.hpp
 )
@@ -21,6 +23,7 @@ target_link_libraries(rx_app PUBLIC
     Vulkan::Vulkan  # The imported target for Vulkan
     glm::glm        # The imported target for GLM
     glfw            # The imported target for GLFW
+    Jolt::Jolt
     rx_core
     rx_flecs
     rx_component

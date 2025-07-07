@@ -191,19 +191,24 @@ namespace Rx{
             world.system("InstancedColorModelUpdate")
                 .with<Rx::Component::Transform>()
                 .with<Rx::Component::Material>()
-                .with(instancedColorMeshRelation, flecs::Wildcard) // Group by the target of the InstancedColorMesh relationship.
+                .with(instancedColorMeshRelation, "$parent")
+                .with<ShouldBeUpdated>().src("$parent") 
                 .group_by(instancedColorMeshRelation)
-                .with<ShouldBeUpdated>().up()
                 .kind(preRender)
                 .with<RenderRunning>().src(game)
                 .run([](flecs::iter& it) {
+
+                    uint64_t group_id = 0;
+                    uint32_t instance_index = 0;
+
                     while(it.next()) {
+                         if(group_id != it.group_id()) {
+                            group_id = it.group_id();
+                            instance_index = 0; 
+                         }
+
                         // This system iterates over all entities with the Transform and VkInstancedColorModelBuffer components.
                             flecs::entity parent = it.world().entity(it.group_id());
-
-                            if(!parent.has<ShouldBeUpdated>()) {
-                                continue; // Skip if the parent entity does not have ShouldBeUpdated component.
-                            }
 
                             RX_ASSERT(parent.is_alive(), "VkInstancedColorModelBufferUpdate", "System", "Parent entity is not alive");
                             RX_ASSERT(parent.has<Rx::Component::VkInstancedColorModelBuffer>(), "VkInstancedColorModelBufferUpdate", "System", "Parent entity does not have VkInstancedColorModelBuffer component");
@@ -215,7 +220,6 @@ namespace Rx{
                             auto transforms = it.field<Rx::Component::Transform>(0);
                             auto materials = it.field<Rx::Component::Material>(1);
 
-                            uint32_t instance_index = 0;
                             for (auto i : it) {
 
                                 if (instance_index >= instance_capacity) {

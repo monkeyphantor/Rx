@@ -1,6 +1,13 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : enable
 
+// An infinitely small number to prevent division by zero
+#define EPSILON 0.00001
+
+const float PI = 3.14159265359;
+
+// ----- INPUT STRUCTS AND UNIFORMS (from your request) -----
+
 struct PointLight {
     vec4 position;
     vec4 color;
@@ -13,12 +20,14 @@ struct DirectionalLight{
     vec4 intensity;
 };
 
-struct Material {
-    ivec4 textureIndex;
-    vec4 albedo;
-    vec4 metalRough;
-    vec4 emissive;
-};
+// The Material struct is not used directly in the fragment shader,
+// but is likely used on the CPU to populate the 'in' variables.
+// struct Material {
+//     ivec4 textureIndex;
+//     vec4 albedo;
+//     vec4 metalRough;
+//     vec4 emissive;
+// };
 
 layout(binding = 0) uniform Eye {
     vec4 position;
@@ -36,122 +45,169 @@ layout(binding = 2) uniform DirectionalLightBuffer{
     DirectionalLight lights[256];
 }directionalLightBuffer;
 
+// ----- INPUTS FROM VERTEX SHADER -----
+// These are interpolated for each fragment.
+
 layout(location = 0) in vec3 fragPosition;
 layout(location = 1) in vec3 fragNormal;
+// Assumes albedo is the base color (sRGB) from a texture or vertex color.
 layout(location = 2) in vec3 albedo;
+// Assumes a packed vector: .x = metallic, .y = roughness
 layout(location = 3) in vec3 metalRough;
+// The emissive color of the material.
 layout(location = 4) in vec3 emissive;
+
+
+// ----- OUTPUT -----
 
 layout(location = 0) out vec4 outColor;
 
-const float PI = 3.14159265359;
 
+// ----- PBR HELPER FUNCTIONS -----
 
-float GGX(float NdotH, float roughness){
+// Trowbridge-Reitz GGX Normal Distribution Function (NDF)
+// Estimates the amount of microfacets aligned with the halfway vector.
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
     float a = roughness * roughness;
     float a2 = a * a;
-    float denom = NdotH * NdotH * (a2 - 1.0) + 1.0;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
-    return a2/max(denom, 0.00000001);
+
+    return a2 / max(denom, EPSILON);
 }
 
-float geometrySmith(float NdotV, float NdotL, float roughness){
-    float r = roughness + 1.0;
-    float k = (r*r)/8.0;
-    float ggx1 = NdotV/(NdotV * (1.0 - k) + k);
-    float ggx2 = NdotL/(NdotL * (1.0 - k) + k);
-
-    return ggx1 * ggx2; 
+// Schlick-GGX Geometry Function
+// Describes the self-shadowing property of the microfacets.
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+    return NdotV / (NdotV * (1.0 - k) + k);
 }
 
-vec3 fresnelSchlick(float HdotV, vec3 baseReflectivity){
-    return baseReflectivity +  (1.0 - baseReflectivity) * pow(1.0 - HdotV, 5.0);
+// Smith's Method for Geometry Function
+// Combines the geometry function for both view (G_V) and light (G_L) directions.
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+
+    return ggx1 * ggx2;
+}
+
+// Fresnel-Schlick Approximation
+// Describes the ratio of surface reflection at a given angle.
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 
-vec3 PBR_PointLight(vec3 V, vec3 N, vec3 baseReflectivity, vec3 fragPosition, vec3 eyePosition, vec3 lightPosition, vec3 lightColor, float intensity, vec3 albedo, vec3 emissive, float roughness, float metallic){
-    
-    vec3 L = normalize(lightPosition - fragPosition);
-    vec3 H = normalize(V+L);
-    float dist = length(lightPosition - fragPosition);
-    float attenuation = 1.0/(dist*dist);
-    vec3 radiance = lightColor * intensity * attenuation;
+// ----- MAIN SHADER -----
 
-    float NdotV = max(dot(N,V), 0.0000001);
-    float NdotL = max(dot(N,L), 0.0000001);
-    float HdotV = max(dot(H,V), 0.0000001);
-    float NdotH = max(dot(N,H), 0.0000001);
+void main()
+{
+    // --- 1. Extract Material Properties ---
+    // We assume the .xy components of metalRough hold our PBR values.
+    // This is a common packing strategy.
+    vec3  baseColor = albedo;
+    float metallic  = metalRough.x;
+    float roughness = metalRough.y;
 
-    float D = GGX(NdotH, roughness);
-    float G = geometrySmith(NdotV, NdotL, roughness);
-    vec3 F = fresnelSchlick(HdotV, baseReflectivity);
-
-    vec3 specular = D*G*F;
-    specular /= 4.0 * NdotV * NdotL;
-    vec3 kD = vec3(1.0) - F;
-
-    kD *= 1.0 - metallic;
-
-    return (kD*albedo/PI + specular) * radiance * NdotL;
-
-}
-
-vec3 PBR_DirectionalLight(vec3 V, vec3 N, vec3 baseReflectivity, vec3 fragPosition, vec3 eyePosition, vec3 lightDirection, vec3 lightColor, float intensity, vec3 albedo, vec3 emissive, float roughness, float metallic){
-    
-    vec3 L = normalize(-lightDirection);
-    vec3 H = normalize(V+L);
-    vec3 radiance = lightColor * intensity;
-
-    float NdotV = max(dot(N,V), 0.0000001);
-    float NdotL = max(dot(N,L), 0.0000001);
-    float HdotV = max(dot(H,V), 0.0000001);
-    float NdotH = max(dot(N,H), 0.0000001);
-
-    float D = GGX(NdotH, roughness);
-    float G = geometrySmith(NdotV, NdotL, roughness);
-    vec3 F = fresnelSchlick(HdotV, baseReflectivity);
-
-    vec3 specular = D*G*F;
-    specular /= 4.0 * NdotV * NdotL;
-    vec3 kD = vec3(1.0) - F;
-
-    kD *= 1.0 - metallic;
-
-    return (kD*albedo/PI + specular) * radiance * NdotL;
-
-}
-
-void main() {
-
-
-
-    float metallic = metalRough[0];
-    float roughness = metalRough[1];
-
-    vec3 N = normalize(fragNormal); 
+    // --- 2. Setup Per-Fragment Vectors ---
+    vec3 N = normalize(fragNormal);
     vec3 V = normalize(eye.position.xyz - fragPosition);
 
-    vec3 baseReflectivity = mix(vec3(0.04), albedo,  metallic);
+    // --- 3. Calculate F0 (reflectance at normal incidence) ---
+    // For dielectrics (non-metals), F0 is a constant low value.
+    // For metals, F0 is the base color itself.
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0, baseColor, metallic);
 
-    vec3 Lo = vec3(0.0); // Accumulated radiance
+    // --- 4. Main Lighting Calculation ---
+    // This will be our accumulated outgoing radiance.
+    vec3 Lo = vec3(0.0);
 
-    for (int i = 0; i < int(pointLightBuffer.numberPointLights.x); ++i) {
-        PointLight light = pointLightBuffer.lights[i];
+    // --- Directional Lights Loop ---
+    for (int i = 0; i < int(directionalLightBuffer.numberDirectionalLights.x); ++i)
+    {
+        // Light direction is typically "from" the light source. We need the vector *to* the light.
+        vec3 L = normalize(-directionalLightBuffer.lights[i].direction.xyz);
+        vec3 H = normalize(V + L);
+        
+        // Calculate radiance (light's color * intensity)
+        vec3 radiance = directionalLightBuffer.lights[i].color.rgb * directionalLightBuffer.lights[i].intensity.x;
 
-        Lo += PBR_PointLight(V, N, baseReflectivity, fragPosition, eye.position.xyz, light.position.xyz, light.color.xyz, light.intensity.x, albedo, emissive, roughness, metallic);
+        // Cook-Torrance BRDF
+        float NDF = DistributionGGX(N, H, roughness);
+        float G   = GeometrySmith(N, V, L, roughness);
+        vec3  F   = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+        vec3 kS = F; // Specular reflection amount
+        // For energy conservation, diffuse reflection is whatever is not reflected specularly.
+        vec3 kD = vec3(1.0) - kS;
+        // Metals have no diffuse light, so we multiply by (1.0 - metallic)
+        kD *= (1.0 - metallic);
+
+        // BRDF Numerator and Denominator
+        vec3 numerator   = NDF * G * F;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + EPSILON;
+        vec3 specular    = numerator / denominator;
+
+        // Add to outgoing radiance
+        float NdotL = max(dot(N, L), 0.0);
+        Lo += (kD * baseColor / PI + specular) * radiance * NdotL;
     }
 
-    for (int i = 0; i < int(directionalLightBuffer.numberDirectionalLights.x); ++i) {
-        DirectionalLight light = directionalLightBuffer.lights[i];
+    // --- Point Lights Loop ---
+    for (int i = 0; i < int(pointLightBuffer.numberPointLights.x); ++i)
+    {
+        vec3 lightVec = pointLightBuffer.lights[i].position.xyz - fragPosition;
+        float distance = length(lightVec);
+        vec3 L = normalize(lightVec); // Vector to the light
+        vec3 H = normalize(V + L);
 
-        Lo += PBR_DirectionalLight(V, N, baseReflectivity, fragPosition, eye.position.xyz, light.direction.xyz, light.color.xyz, light.intensity.x, albedo, emissive, roughness, metallic);
+        // Attenuation (inverse square law)
+        float attenuation = 1.0 / (distance * distance);
+
+        // Calculate radiance
+        vec3 radiance = pointLightBuffer.lights[i].color.rgb * pointLightBuffer.lights[i].intensity.x * attenuation;
+
+        // Cook-Torrance BRDF (same as for directional lights)
+        float NDF = DistributionGGX(N, H, roughness);
+        float G   = GeometrySmith(N, V, L, roughness);
+        vec3  F   = fresnelSchlick(max(dot(H, V), 0.0), F0);
+        
+        vec3 kS = F;
+        vec3 kD = vec3(1.0) - kS;
+        kD *= (1.0 - metallic);
+
+        vec3 numerator   = NDF * G * F;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + EPSILON;
+        vec3 specular    = numerator / denominator;
+
+        float NdotL = max(dot(N, L), 0.0);
+        Lo += (kD * baseColor / PI + specular) * radiance * NdotL;
     }
 
-    vec3 ambient = vec3(0.03) * albedo;
-    vec3 color =  Lo + emissive + ambient;
+    // --- 5. Ambient and Emissive Light ---
+    // A simple ambient term to lift the shadows.
+    // For a full PBR pipeline, this would be replaced by Image-Based Lighting (IBL)
+    // from a pre-convoluted environment map.
+    vec3 ambient = vec3(0.03) * baseColor;
+    vec3 color = ambient + Lo + emissive;
 
-    //color = color / (color + vec3(1.0));
-    //color = pow(color, vec3(1.0/2.2));
-    
+    // --- 6. Post-Processing: HDR to LDR ---
+    // Reinhard Tonemapping
+    color = color / (color + vec3(1.0));
+    // Gamma Correction (assuming sRGB display)
+    color = pow(color, vec3(1.0/2.2));
+
     outColor = vec4(color, 1.0);
 }

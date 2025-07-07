@@ -105,6 +105,7 @@ struct Actor {
                 e.add<Rx::Component::VkColorModelBuffer>();
                 e.add<Rx::Component::VkColorModelDescriptorSet>();
                 e.set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, glm::vec3(0.f, 1.f, 0.f), glm::vec3(i * 3.f, 0.f, j * 3.f) });
+                e.set<Rx::Component::Material>({ glm::vec4(1.f, 0.f, 0.f, 1.f), 0.5f, 0.5f, glm::vec3(1.f) });
             }
         }
     }

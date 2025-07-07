@@ -78,7 +78,6 @@ struct Actors {
         batchRenderer.add<Rx::Component::VkInstancedColorModelDescriptorSet>();
         batchRenderer.add<Rx::ShouldBeUpdated>();
 
-        // Generate the world
         generateWorld(world, batchRenderer);
     }
 
@@ -101,21 +100,17 @@ struct Actors {
         block.add<LevelAsset>();
     }
 
-    // Helper function to create a tree at a given base position
-    // basePos is the scaled world position where the tree trunk starts.
-    void createTree(flecs::world& world, flecs::entity batchRenderer, const glm::vec3& basePos) {
+void createTree(flecs::world& world, flecs::entity batchRenderer, const glm::vec3& baseGridPos) {
         // Create the trunk (e.g., 4 to 6 blocks high)
         int trunkHeight = 4 + (rand() % 3); // Vary height slightly
         for (int i = 0; i < trunkHeight; ++i) {
-            // --- MODIFIED ---
-            // The offset from the base position must also be scaled.
-            glm::vec3 trunkBlockPos = basePos + glm::vec3(0.f, static_cast<float>(i), 0.f) * WORLD_SCALE;
-            createBlock(world, batchRenderer, trunkBlockPos, TRUNK_COLOR);
+            // The offset is in grid units.
+            glm::vec3 trunkBlockGridPos = baseGridPos + glm::vec3(0.f, static_cast<float>(i), 0.f);
+            createBlock(world, batchRenderer, trunkBlockGridPos * WORLD_SCALE, TRUNK_COLOR);
         }
 
-        // --- MODIFIED ---
-        // Calculate the center of the leaves blob in scaled world coordinates.
-        glm::vec3 leavesCenter = basePos + glm::vec3(0.f, static_cast<float>(trunkHeight), 0.f) * WORLD_SCALE;
+        // Calculate the center of the leaves blob in grid coordinates.
+        glm::vec3 leavesCenterGridPos = baseGridPos + glm::vec3(0.f, static_cast<float>(trunkHeight), 0.f);
         
         for (int x = -2; x <= 2; ++x) {
             for (int y = -1; y <= 2; ++y) {
@@ -129,10 +124,9 @@ struct Actors {
                         continue;
                     }
 
-                    // --- MODIFIED ---
-                    // The offset for each leaf block must also be scaled.
-                    glm::vec3 leafOffset = glm::vec3(x, y, z) * WORLD_SCALE;
-                    createBlock(world, batchRenderer, leavesCenter + leafOffset, LEAVES_COLOR);
+                    // The offset for each leaf block is in grid units.
+                    glm::vec3 leafGridPos = leavesCenterGridPos + glm::vec3(x, y, z);
+                    createBlock(world, batchRenderer, leafGridPos * WORLD_SCALE, LEAVES_COLOR);
                 }
             }
         }
@@ -145,11 +139,11 @@ struct Actors {
         noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
         noise.SetFrequency(TERRAIN_NOISE_FREQUENCY);
         
-        // Seed the random number generator for tree placement
+        // Seed the random number generator for tree placement ONCE.
         srand(time(NULL));
 
-        for (int x = 0; x < WORLD_SIZE_X; ++x) {
-            for (int z = 0; z < WORLD_SIZE_Z; ++z) {
+        for (int x = -WORLD_SIZE_X / 2; x < WORLD_SIZE_X / 2; ++x) {
+            for (int z = -WORLD_SIZE_Z / 2; z < WORLD_SIZE_Z / 2; ++z) {
                 // Get height from noise function. The output is [-1, 1].
                 float noiseValue = noise.GetNoise(static_cast<float>(x), static_cast<float>(z));
                 // Scale and offset to get a positive terrain height (in grid units).
@@ -159,13 +153,11 @@ struct Actors {
                 // We calculate the position in "grid space" first.
                 glm::vec3 grassGridPos(x, height, z);
                 
-                // --- MODIFIED ---
                 // We convert from grid space to world space by multiplying by WORLD_SCALE.
                 createBlock(world, batchRenderer, grassGridPos * WORLD_SCALE, GRASS_COLOR);
 
                 // Create dirt blocks underneath the grass
                 for (int y = height - 1; y >= height - 4 && y >= 0; --y) {
-                    // --- MODIFIED ---
                     // Also scale the position for dirt blocks.
                     createBlock(world, batchRenderer, glm::vec3(x, y, z) * WORLD_SCALE, DIRT_COLOR);
                 }
@@ -173,10 +165,9 @@ struct Actors {
                 // Randomly decide to place a tree on top of the grass block
                 float randomValue = static_cast<float>(rand()) / static_cast<float>(RAND_MAX); // Random float [0, 1]
                 if (randomValue < TREE_DENSITY) {
-                    // --- MODIFIED ---
-                    // Calculate the tree's base position in grid space, then scale it to world space.
+                    // Calculate the tree's base position in grid space.
                     glm::vec3 treeBaseGridPos = grassGridPos + glm::vec3(0.f, 1.f, 0.f);
-                    createTree(world, batchRenderer, treeBaseGridPos * WORLD_SCALE);
+                    createTree(world, batchRenderer, treeBaseGridPos);
                 }
             }
         }
@@ -192,7 +183,7 @@ struct Actors {
             glm::vec3(1.f,1.f,1.f), // Scale
             -3.14/4.f,                     // Angle
             glm::normalize(glm::vec3(1.f, 1.f, 0.f)), // Axis
-            glm::vec3(0.f, 0.f, 0.f)  // Position
+            glm::vec3(0.f, 0.f, 50.f)  // Position
         });
     }
 };

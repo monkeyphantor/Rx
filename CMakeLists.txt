@@ -11,7 +11,7 @@ project(RxProject VERSION 1.0 LANGUAGES CXX)
 # For this to work, you must either install these libraries to a system path
 # or tell CMake where to find them using CMAKE_PREFIX_PATH (see instructions below).
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
@@ -25,6 +25,8 @@ find_package(glfw3 REQUIRED)
 # Find the GLM mathematics library.
 find_package(glm REQUIRED)
 
+find_package(Jolt REQUIRED)
+
 # --- Build Internal Libraries ---
 # Process the subdirectories to create our 'component_lib' and 'core_lib' targets.
 add_subdirectory(./flecs)
@@ -35,3 +37,4 @@ add_subdirectory(./application)
 
 add_subdirectory(./examples/example1)
 add_subdirectory(./examples/example2)
+add_subdirectory(./examples/example3)
