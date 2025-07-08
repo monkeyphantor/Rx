@@ -33,7 +33,8 @@ namespace Rx {
         std::unique_ptr<JPH::PhysicsSystem> physicsSystem{nullptr};
         std::unique_ptr<JPH::JobSystemThreadPool> jobSystemThreadPool{nullptr};
         std::unique_ptr<JPH::TempAllocator> tempAllocator{nullptr};
-
+        std::unique_ptr<Rx::FlecsContactListener> contactListener{nullptr};
+        
         flecs::entity onPhysicsUpdate;
 
     public:

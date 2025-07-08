@@ -10,9 +10,10 @@
 #include "PhysicsBody.hpp"
 #include "RigidBody.hpp"
 #include "Physics.hpp"
-#include "velocity.hpp"
-#include "time.hpp"
+#include "flyingCamera.hpp"
 #include "input.hpp"
+#include "time.hpp"
+#include "velocity.hpp"
 
 #define random(lower, upper) ((static_cast<float>(rand())/static_cast<float>(RAND_MAX))*((upper)-(lower)) + (lower))
 
@@ -20,7 +21,6 @@ struct Actors;
 struct FireballSystem;
 struct Move;
 struct LevelManager;
-namespace Rx {
 
     class RxLevel1 : public Rx::Level {
     public:
@@ -42,7 +42,6 @@ namespace Rx {
         }
     };
 
-} // namespace Rx
 
 
 struct Actors {
@@ -74,13 +73,6 @@ struct Actors {
         batchRenderer.add<Rx::Component::VkInstancedColorModelDescriptorSet>();
         batchRenderer.add<Rx::ShouldBeUpdated>();
 
-       world.system()
-            .kind(flecs::PreUpdate)
-            .run([batchRenderer](flecs::iter& it) {
-                  while(it.next()){
-                        batchRenderer.add<Rx::ShouldBeUpdated>();
-                  }
-                });
 
         // FLOOR
         auto rel = world.lookup("InstancedColorMeshRelation");
@@ -101,64 +93,73 @@ struct Actors {
             .halfExtent = glm::vec3(300.f, 0.1f, 300.f), // Large enough to cover the floor
         });
 
-
-        //elevator
-        auto elevator = world.entity("Elevator");
-        elevator.add(rel, batchRenderer);
-        elevator.set<Rx::Component::Transform>({
-            glm::vec3(100.f, 0.1f, 100.f), // Scale
-            0.f,                         // Angle
-            glm::vec3(0.f, 1.f, 0.f),    // Axis
-            glm::vec3(0.f, 40.f, 0.f)    // Position
-        });
-        elevator.set<Rx::Component::Velocity>({
-            .velocity = glm::vec3(0.f, 0.f, 0.f), // Initial velocity
-            .angularVelocity = glm::vec3(0.f, 0.f, 0.f) // Initial angular velocity
-        });
-        elevator.set<Rx::Component::Material>({ glm::vec3(0.1f, 0.1f, 0.1f), random(0.1f,0.2f), random(0.1f,0.2f), glm::vec3(0.0f) });
-        elevator.set<Rx::Component::KinematicRigidBody>({ 
-            .objectLayer =  Rx::Layers::DYNAMIC_ENVIRONMENT, 
-            .friction = 1.0f,
-            .restitution = 0.5f });
-        elevator.set<Rx::Component::BoxCollider>({
-            .halfExtent = glm::vec3(100.f, 0.1f, 100.f), // Large enough to cover the elevator
-        });
-        // Create a system to move the elevator up and down
-        world.system("ElevatorMovement")
+        world.system()
             .kind(flecs::PreUpdate)
-            .run([elevator](flecs::iter& it) {
-                while (it.next()) {
-                    if(Rx::Input::keyX.down) {
-                        elevator.set<Rx::Component::Velocity>({
-                            .velocity = glm::vec3(0.f, 40.f * cos(Rx::Time::time * 2.f), 0.f), // No horizontal movement
-                            .angularVelocity = glm::vec3(0.f, 1.f, 0.f) // Rotate around Y-axis
-                        });
-                    }
-                }
-            });
+            .run([batchRenderer](flecs::iter& it) {
+                  while(it.next()){
+                        batchRenderer.add<Rx::ShouldBeUpdated>();
+                  }
+                });
 
-       for(int i = -20 ; i < 20; i++){
-            for(int j = -20; j < 20; j++){
+       for(int i = -30 ; i < 30; i++){
+            for(int j = -30; j < 30; j++){
 
                 auto block = world.entity();
                 block.add(rel, batchRenderer);
                 block.set<Rx::Component::Material>({ glm::vec3(random(0.f,0.5f), random(0.9f,1.f), random(0.9f,1.f)), random(0.1f,0.2f), random(0.1f,0.2f), glm::vec3(0.0f) });
                 block.set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, glm::vec3(0.f, 1.f, 0.f), glm::vec3(i * 3.f, 50.f + std::abs(i*j), j * 3.f) });
-                block.set<Rx::Component::Velocity>({
-                    .velocity = glm::vec3(random(-5.f, 5.f), random(-5.f, 5.f), random(-5.f, 5.f)),
-                    .angularVelocity = glm::vec3(random(-1.f, 1.f), random(-1.f, 1.f), random(-1.f, 1.f))
-                });
                 block.set<Rx::Component::DynamicRigidBody>({ 
                     .objectLayer =  Rx::Layers::DYNAMIC_ENVIRONMENT, 
                     .mass = 1.0f,
-                    .friction = 1.0f,
+                    .friction = 0.5f,
                     .restitution = 0.5f
                 });
                 block.set<Rx::Component::BoxCollider>({
                     .halfExtent = glm::vec3(1.f, 1.f, 1.f),
                 });
             }
-        }   
+        }  
+        
+        
+        world.system<Rx::Component::FlyingCamera>()
+            .each([&](flecs::entity camEntity, Rx::Component::FlyingCamera& camera) {
+            if(!Rx::Input::buttonLeft.pressed) {
+                return; // Only create fireball if mouse button 1 is pressed
+            }
+            
+            Rx::Component::Transform fireballTransform;
+            fireballTransform.translation = camera.position;
+            fireballTransform.scale = glm::vec3(1.f);
+            fireballTransform.angle = 0.f;
+            fireballTransform.axis = glm::vec3(1.f, 0.f, 0.f);
+
+            float speed = 100.f;
+            glm::vec3 velocity = camera.direction * speed;
+
+            // Create a fireball entity
+            auto fireball = world.entity();
+            fireball.add(rel, batchRenderer);
+            fireball.set<Rx::Component::Material>({ glm::vec3(random(0.f,0.5f), random(0.9f,1.f), random(0.9f,1.f)), random(0.1f,0.2f), random(0.1f,0.2f), glm::vec3(0.0f) });
+            fireball.set<Rx::Component::Transform>(fireballTransform);
+            fireball.set<Rx::Component::Velocity>({velocity});
+            fireball.set<Rx::Component::DynamicRigidBody>({ 
+                .objectLayer =  Rx::Layers::DYNAMIC_ENVIRONMENT, 
+                .mass = 1.0f,
+                .friction = 0.5f,
+                .restitution = 0.5f
+            });
+            fireball.set<Rx::Component::BoxCollider>({
+                .halfExtent = glm::vec3(1.f, 1.f, 1.f),
+            });
+
+
+            world.system<Rx::Component::Transform, Rx::Component::Velocity>()
+                .each([&](flecs::entity e, Rx::Component::Transform& transform, Rx::Component::Velocity& velocity) {
+                    // Update the position based on velocity
+                    transform.translation += velocity.velocity * Rx::Time::deltaTime;
+                });
+
+        });
     }
 };
 

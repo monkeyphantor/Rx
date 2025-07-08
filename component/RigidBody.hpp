@@ -19,6 +19,10 @@ namespace Rx {
             float restitution;
         };
 
-
+        struct KinematicRigidBody{
+            JPH::ObjectLayer objectLayer;
+            float friction;
+            float restitution;
+        };
     }
 }

@@ -180,4 +180,63 @@ namespace Core{
         return glm::quat(quat.GetW(), quat.GetX(), quat.GetY(), quat.GetZ());
     }
 }
+
+#include "flecs.h"
+
+struct CollisionEvent{
+    flecs::entity_t entity1;
+    flecs::entity_t entity2;
+    glm::vec3 contactPoint;
+    glm::vec3 contactNormal;
+};
+
+
+class CollisionQueue
+{
+public:
+    void push(const CollisionEvent& event) {
+        std::lock_guard<std::mutex> lock(mutex);
+        queue.push_back(event);
+    }
+
+    void drain(std::vector<CollisionEvent>& out_events) {
+        std::lock_guard<std::mutex> lock(mutex);
+        out_events.swap(queue);
+        queue.clear();
+    }
+
+private:
+    std::mutex mutex;
+    std::vector<CollisionEvent> queue;
+};
+
+
+namespace Core{
+inline CollisionQueue collisionQueue; // Global queue for collision events
+}
+
+class FlecsContactListener : public JPH::ContactListener {
+public:
+    // We pass a reference to our queue
+    FlecsContactListener() {}
+
+    // We only care about when two bodies start touching.
+    void OnContactAdded(const JPH::Body &inBody1, const JPH::Body &inBody2, const JPH::ContactManifold &inManifold, JPH::ContactSettings &ioSettings) override {
+
+        // The world space normal, pointing from body 2 to body 1.
+        JPH::Vec3 jolt_normal = inManifold.mWorldSpaceNormal;
+
+        // Get the first contact point on the surface of body 2.
+        JPH::Vec3 jolt_point = inManifold.GetWorldSpaceContactPointOn2(0);
+
+        // We get the flecs::entity_t from the user data we stored earlier.
+        auto e1_id = static_cast<flecs::entity_t>(inBody1.GetUserData());
+        auto e2_id = static_cast<flecs::entity_t>(inBody2.GetUserData());
+
+        // We only push if both are valid entities
+        if (e1_id != 0 && e2_id != 0) {
+            Core::collisionQueue.push({e1_id, e2_id, Core::toGlmVec3(jolt_point), Core::toGlmVec3(jolt_normal)});
+        }
+    }
+};
 }
