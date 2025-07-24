@@ -6,20 +6,6 @@
 #include "mutex.hpp"
 #include "flecs.h"
 #include "level.hpp"
-#include "VkColorMesh.hpp"
-#include "VkColorModelDescriptorSet.hpp"
-#include "colorMesh.hpp"
-#include "transform.hpp"
-#include "VkInstancedColorModelBuffer.hpp"
-#include "colorMeshArray.hpp"
-#include "colorArrayGraphics.hpp"
-#include "indirectBuffer.hpp"
-#include "ColorModelInstance.hpp"
-#include "VkInstancedColorModelDescriptorSet.hpp"
-#include "pipelineLayouts.hpp"
-#include "pipelines.hpp"
-#include "PointLight.hpp"
-#include "DirectionalLight.hpp"
 
 namespace Rx{
 
@@ -56,7 +42,8 @@ namespace Rx{
 
         flecs::entity colorMeshArrayInstanceRelation;
         flecs::entity instancedColorMeshRelation;
-
+        flecs::entity textureModelInstanceRelation;
+        
     private:
         void registerComponentsBase();
 

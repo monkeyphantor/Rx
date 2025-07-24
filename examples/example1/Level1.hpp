@@ -4,6 +4,8 @@
 #include "DirectionalLight.hpp"
 #include "VkColorModelBuffer.hpp"
 #include "ColorMesh.hpp"
+#include "VkColorMesh.hpp"
+#include "VkColorModelDescriptorSet.hpp"
 #include "Material.hpp"
 #include "shape.hpp"
 
@@ -59,15 +61,15 @@ struct Actors {
         //Rx::Shape::ColorSphere sphere(1.f, 16, 16, glm::vec3(1.f, 0.f, 0.f));
 
 
-        for(int i = 0 ; i < 100; i++){
-            for(int j = 0; j < 100; j++){
+        for(int i = 0 ; i < 10; i++){
+            for(int j = 0; j < 10; j++){
                 auto e = world.entity();
                 e.set<Rx::Component::ColorMesh>({ cube.getVertices(), cube.getIndices() });
                 e.add<Rx::Component::VkColorMesh>();
                 e.add<Rx::Component::VkColorModelBuffer>();
                 e.add<Rx::Component::VkColorModelDescriptorSet>();
                 e.set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, glm::vec3(0.f, 1.f, 0.f), glm::vec3(10.f,0.f,10.f) + glm::vec3(i * 7.f, 0.f, j * 7.f) });
-                e.set<Rx::Component::Material>({ glm::vec4(1.f, 0.f, 0.f, 1.f), i/30.f, j/30.f, glm::vec3(0.f) });
+                e.set<Rx::Component::Material>({ glm::vec4(1.f, 0.f, 0.f, 1.f), i/10.f, j/10.f, glm::vec3(0.f) });
             }
         }   
     }

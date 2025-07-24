@@ -1,9 +1,9 @@
-#include "indirectBuffer.hpp"
+#include "VkIndirectBuffer.hpp"
 
 namespace Rx {
     namespace Component {
 
-        void indirectBuffer_component_on_set(flecs::entity e, IndirectBuffer& indirectBuffer) {
+        void indirectBuffer_component_on_set(flecs::entity e, VkIndirectBuffer& indirectBuffer) {
             // Create the indirect buffer with the specified number of commands
             indirectBuffer.buffer = Core::createBufferInterface(
                 indirectBuffer.maxNumberCommands,
@@ -12,7 +12,7 @@ namespace Rx {
             );
         }
 
-        void indirectBuffer_component_on_remove(flecs::entity e, IndirectBuffer& indirectBuffer) {
+        void indirectBuffer_component_on_remove(flecs::entity e, VkIndirectBuffer& indirectBuffer) {
             // Cleanup GPU resources
             Core::destroyBufferInterface(indirectBuffer.buffer);
         }

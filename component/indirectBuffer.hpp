@@ -1,20 +1,27 @@
 #pragma once
 
-#include "../core/global.hpp"
-#include "../core/buffer.hpp"
-#include "../flecs/include/flecs.h"
+#include "global.hpp"
 
 namespace Rx{
     namespace Component{
         struct IndirectBuffer{
-            uint32_t maxNumberCommands{0}; 
-            uint32_t numberCommands{0};
-            Core::BufferInterface buffer;
+            std::vector<VkDrawIndexedIndirectCommand> commands;
+
+            void addCommand(const VkDrawIndexedIndirectCommand& command) {
+                commands.push_back(command);
+            }
+
+            void setInstanceCount(uint32_t count) {
+                for(auto& command : commands) {
+                    command.instanceCount = count;
+                }
+            }
+
+            void addInstanceCount(uint32_t count) {
+                for(auto& command : commands) {
+                    command.instanceCount += count;
+                }
+            }
         };
-
-
-
-        void indirectBuffer_component_on_set(flecs::entity e, IndirectBuffer& indirectBuffer);
-        void indirectBuffer_component_on_remove(flecs::entity e, IndirectBuffer& indirectBuffer);
     }
 }

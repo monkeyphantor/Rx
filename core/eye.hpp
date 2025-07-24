@@ -9,6 +9,8 @@ namespace Rx
     {
         struct Eye
         {
+            glm::vec4 position;
+            glm::vec4 direction;
             glm::mat4 projView;
         };
 

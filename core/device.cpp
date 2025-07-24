@@ -16,10 +16,17 @@ namespace Rx
             queueCreateInfo.pQueuePriorities = &priority;
 
 
+            VkPhysicalDeviceVulkan12Features vulkan12Features{};
+            vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+            vulkan12Features.runtimeDescriptorArray = VK_TRUE;
+            vulkan12Features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+            vulkan12Features.pNext = nullptr;
+            
             // Add this when creating the device:
             VkPhysicalDeviceVulkan11Features vulkan11Features{};
             vulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
             vulkan11Features.shaderDrawParameters = VK_TRUE;
+            vulkan11Features.pNext = &vulkan12Features;
 
             VkDeviceCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

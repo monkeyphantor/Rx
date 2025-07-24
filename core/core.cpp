@@ -23,7 +23,7 @@ namespace Core
         Core::command[0] = createCommand();
         Core::command[1] =  createCommand();
 
-        Core::single_command = createSingleCommand();
+        Core::singleCommand = createSingleCommand();
 
         createEye();
 
@@ -52,7 +52,7 @@ namespace Core
 
         destroyEye();
 
-        destroySingleCommand(Core::single_command);   
+        destroySingleCommand(Core::singleCommand);   
         destroyCommand(Core::command[1]);
         destroyCommand(Core::command[0]);
 

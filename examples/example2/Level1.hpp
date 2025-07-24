@@ -8,7 +8,9 @@
 #include "Material.hpp"
 #include "shape.hpp"
 #include "FastNoiseLite.h"
-
+#include "VkColorMesh.hpp"
+#include "VkInstancedColorModelBuffer.hpp"
+#include "VkInstancedColorModelDescriptorSet.hpp"
 #define random(lower, upper) ((static_cast<float>(rand())/static_cast<float>(RAND_MAX))*((upper)-(lower)) + (lower))
 
 struct Actors;

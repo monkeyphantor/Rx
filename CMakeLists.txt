@@ -27,6 +27,8 @@ find_package(glm REQUIRED)
 
 find_package(Jolt REQUIRED)
 
+find_package(assimp REQUIRED)
+
 # --- Build Internal Libraries ---
 # Process the subdirectories to create our 'component_lib' and 'core_lib' targets.
 add_subdirectory(./flecs)
@@ -34,7 +36,13 @@ add_subdirectory(./core)
 add_subdirectory(./shape)
 add_subdirectory(./component)
 add_subdirectory(./application)
+add_subdirectory(./asset)
+
+add_subdirectory(./converter)
 
 add_subdirectory(./examples/example1)
 add_subdirectory(./examples/example2)
 add_subdirectory(./examples/example3)
+add_subdirectory(./examples/example4)
+add_subdirectory(./examples/example5)
+add_subdirectory(./examples/example6)

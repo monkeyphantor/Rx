@@ -6,7 +6,8 @@ namespace Rx
 {
     namespace Component
     {
-        struct Velocity
+        struct 
+            Velocity
         {
             glm::vec3 velocity;
             glm::vec3 angularVelocity;

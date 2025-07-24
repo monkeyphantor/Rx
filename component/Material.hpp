@@ -13,6 +13,12 @@ namespace Rx{
             glm::vec3 emissive;
         };
 
+        struct TextureMaterial{
+            glm::ivec4 textureIndex;
+            glm::vec4 albedo;
+            glm::vec4 metalRough;
+            glm::vec4 emissive;
+        };
 
         struct SquareMaterial {
             glm::vec3 albedo;       // Base color

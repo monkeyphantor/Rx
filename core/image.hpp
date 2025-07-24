@@ -35,5 +35,25 @@ namespace Rx
         VkImageAspectFlags aspect);
 
         void destroyImage(Image image);
+
+        struct TextureCPU{
+            uint32_t width{ 0 };
+            uint32_t height{ 0 };
+            void* pixels{ nullptr };
+            VkFormat vkFormat{};
+        };
+
+        struct Texture{
+            uint32_t width;
+            uint32_t height;
+            VkImage vkImage;
+            VmaAllocation vmaAllocation;
+            VkImageView vkImageView;
+            VkSampler vkSampler;
+        };
+
+        Texture createTexture(uint32_t width, uint32_t height, void* pixels);
+        void destroyTexture(Texture& texture);
+
     }
 }

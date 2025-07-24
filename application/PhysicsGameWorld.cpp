@@ -9,6 +9,8 @@
 #include "BoxCollider.hpp"
 #include "ContactInfo.hpp"
 #include "Velocity.hpp"
+#include "Sensor.hpp"
+#include "transform.hpp"
 
 namespace Rx{
     PhysicsGameWorld::PhysicsGameWorld(Application& app, flecs::world& world)
@@ -49,6 +51,8 @@ namespace Rx{
             *objectLayerPairFilter
         );
 
+        physicsSystem->SetGravity(Core::toJoltVec3(glm::vec3(0.0f, -9.81f, 0.0f)));
+
         jobSystemThreadPool = std::make_unique<JPH::JobSystemThreadPool>(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, JPH::thread::hardware_concurrency() - 1);
 
         tempAllocator = std::make_unique<JPH::TempAllocatorImpl>(tempAllocatorSize);
@@ -62,7 +66,7 @@ namespace Rx{
         JPH::UnregisterTypes();
         delete JPH::Factory::sInstance;
         JPH::Factory::sInstance = nullptr;
-    }
+    }   
 
     void PhysicsGameWorld::createPhysicsEntities() {
         onPhysicsUpdate = world.entity("onPhysicsUpdate");
@@ -182,6 +186,60 @@ namespace Rx{
                 e.set<Component::PhysicsBody>({ body->GetID() });
             });
 
+        world.observer<Rx::Component::StaticSensor, Rx::Component::BoxCollider, Rx::Component::Transform>()
+            .event(flecs::OnSet)
+            .each([&](flecs::entity e, Rx::Component::StaticSensor& sensor, Rx::Component::BoxCollider& bc, Rx::Component::Transform& tf) {
+                if (e.has<Rx::Component::PhysicsBody>()) return;
+
+                JPH::Ref<JPH::Shape> boxShape = new JPH::BoxShape(Core::toJoltVec3(bc.halfExtent));
+
+                JPH::BodyCreationSettings settings(
+                    boxShape,
+                    Core::toJoltVec3(tf.translation),
+                    Core::toJoltQuat(tf.toRotation()),
+                    JPH::EMotionType::Static, // Sensors are typically static
+                    sensor.objectLayer
+                );
+
+                settings.mIsSensor = true; // Mark this body as a sensor
+
+                // Create the body
+                JPH::Body *body = bodyInterface.CreateBody(settings);
+                bodyInterface.AddBody(body->GetID(), JPH::EActivation::Activate);
+
+                // Add the JoltBody component to link the entity to the Jolt body.
+                // Store the entity's 64-bit ID in Jolt's user data for easy lookup later.
+                bodyInterface.SetUserData(body->GetID(), e.id());
+                e.set<Component::PhysicsBody>({ body->GetID() });
+            });
+        
+        world.observer<Rx::Component::KinematicSensor, Rx::Component::BoxCollider, Rx::Component::Transform>()
+            .event(flecs::OnSet)
+            .each([&](flecs::entity e, Rx::Component::KinematicSensor& sensor, Rx::Component::BoxCollider& bc, Rx::Component::Transform& tf) {
+                if (e.has<Rx::Component::PhysicsBody>()) return;
+
+                JPH::Ref<JPH::Shape> boxShape = new JPH::BoxShape(Core::toJoltVec3(bc.halfExtent));
+
+                JPH::BodyCreationSettings settings(
+                    boxShape,
+                    Core::toJoltVec3(tf.translation),
+                    Core::toJoltQuat(tf.toRotation()),
+                    JPH::EMotionType::Kinematic, 
+                    sensor.objectLayer
+                );
+
+                settings.mIsSensor = true; // Mark this body as a sensor
+                settings.mCollideKinematicVsNonDynamic = true; // Ensure kinematic sensors collide with non-dynamic bodies
+                // Create the body
+                JPH::Body *body = bodyInterface.CreateBody(settings);
+                bodyInterface.AddBody(body->GetID(), JPH::EActivation::Activate);
+
+                // Add the JoltBody component to link the entity to the Jolt body.
+                // Store the entity's 64-bit ID in Jolt's user data for easy lookup later.
+                bodyInterface.SetUserData(body->GetID(), e.id());
+                e.set<Component::PhysicsBody>({ body->GetID() });
+            });
+
         world.observer<Component::PhysicsBody>()
             .event(flecs::OnRemove)
             .each([&](flecs::entity e, Component::PhysicsBody& pb) {
@@ -197,9 +255,7 @@ namespace Rx{
             .kind(onPhysicsUpdate)
             .run([&](flecs::iter& it) {
                 while(it.next()){
-                if(Input::keyX.down){
-                    physicsSystem->Update(Time::deltaTime, 1.f/Time::deltaTime > 60.f ? 1 : 2, tempAllocator.get(), jobSystemThreadPool.get());
-                    }
+                    physicsSystem->Update(Time::deltaTime, 1.f/Time::deltaTime > 60.f ? 1 : 2, tempAllocator.get(), jobSystemThreadPool.get());                    
                 }
             });
 
@@ -250,33 +306,38 @@ namespace Rx{
             });
 
 
-        world.system<Rx::Component::Transform, Rx::Component::Velocity>("SyncKinematicJoltFromFlecs")
-            .with<Rx::Component::PhysicsBody>()
-            .with<Rx::Component::KinematicRigidBody>()
+        world.system<Rx::Component::Transform, Rx::Component::PhysicsBody>()
+            .with<Rx::Component::KinematicSensor>()
+            .without<Rx::Component::Velocity>() 
             .kind(onPhysicsUpdate)
-            .each([&](flecs::entity e, Rx::Component::Transform& tf, Rx::Component::Velocity& vel) {
-                tf.translation += vel.velocity * Time::deltaTime;
+            .each([&](flecs::entity e, Rx::Component::Transform& tf, Rx::Component::PhysicsBody& pb) {
+                JPH::Vec3 position = Core::toJoltVec3(tf.translation);
+                JPH::Quat rotation = Core::toJoltQuat(tf.toRotation());
+                bodyInterface.SetPositionAndRotation(pb.bodyID, position, rotation, JPH::EActivation::Activate);
+            });
 
-                glm::vec3 angular_velocity = vel.angularVelocity;
-                float angular_speed = glm::length(angular_velocity);
-
-                // Only apply rotation if there is any angular velocity
-                if (angular_speed > 0.0001f) {
-                    // a. Calculate the rotation for this single frame
-                    float angle_delta = angular_speed * Time::deltaTime;
-                    glm::vec3 axis = glm::normalize(angular_velocity);
-
-                    // b. Create a "delta" quaternion representing this frame's small rotation
-                    glm::quat delta_rotation = glm::angleAxis(angle_delta, axis);
-
-                    // c. Apply the delta rotation to the current rotation.
-                    // The order matters! `delta * current` applies the spin in the object's local space.
-                    auto rotation = glm::normalize(delta_rotation * glm::angleAxis(tf.angle, tf.axis));
-
-                    // d. Normalize the result to prevent floating-point drift over time
-                    tf.angle = glm::angle(rotation);
-                    tf.axis = glm::axis(rotation);
-                }
+        world.system<Rx::Component::Velocity, Rx::Component::PhysicsBody>()
+            .with<Rx::Component::KinematicSensor>()
+            .kind(onPhysicsUpdate)
+            .each([&](flecs::entity e, Rx::Component::Velocity& vel, Rx::Component::PhysicsBody& pb) {
+                JPH::Vec3 linearVelocity = Core::toJoltVec3(vel.velocity);
+                JPH::Vec3 angularVelocity = Core::toJoltVec3(vel.angularVelocity);
+                bodyInterface.SetLinearAndAngularVelocity(pb.bodyID, linearVelocity, angularVelocity);
+            });
+        
+        world.system<Rx::Component::Transform, Rx::Component::PhysicsBody>()
+            .with<Rx::Component::KinematicSensor>()
+            .with<Rx::Component::Velocity>()
+            .kind(onPhysicsUpdate)
+            .each([&](flecs::entity e, Rx::Component::Transform& tf, Rx::Component::PhysicsBody& pb) {
+                JPH::Vec3 position;
+                JPH::Quat rotation;
+                bodyInterface.GetPositionAndRotation(pb.bodyID, position, rotation);
+                
+                tf.translation = Core::toGlmVec3(position);
+                auto rot = Core::toGlmQuat(rotation);
+                tf.angle = glm::angle(rot);
+                tf.axis = glm::axis(rot);
             });
 
          // System to process the collision queue
@@ -288,13 +349,16 @@ namespace Rx{
                     std::vector<CollisionEvent> events;
                     Core::collisionQueue.drain(events);
 
-                    std::cout << "Processing " << events.size() << " collision events." << std::endl;
+                    if(events.empty()) {
+                        return; // No events to process
+                    }
                     for (const auto& ev : events) {
 
                         flecs::entity e1(it.world(), ev.entity1);
                         flecs::entity e2(it.world(), ev.entity2);
 
                         if (e1.is_valid() && e2.is_valid()) {
+
                             // This is the key change. We are adding the (ContactInfo, e2) pair to e1,
                             // and storing the contact data *on the relationship instance*.
                             e1.set<Component::ContactInfo>(e2, {ev.contactPoint, ev.contactNormal});

@@ -24,10 +24,24 @@ colorMeshArray.hpp
 colorMeshArray.cpp
 VkInstancedColorModelBuffer.hpp
 VkInstancedColorModelBuffer.cpp
-indirectBuffer.hpp
-indirectBuffer.cpp
+VkIndirectBuffer.hpp
+VkIndirectBuffer.cpp
 VkInstancedColorModelDescriptorSet.hpp
 VkInstancedColorModelDescriptorSet.cpp
+TextureArray.hpp
+TextureArray.cpp
+VkTextureArray.hpp
+VkTextureArray.cpp
+TextureMeshArray.hpp
+TextureMeshArray.cpp
+VkTextureMeshArray.hpp
+VkTextureMeshArray.cpp
+VkTransformBuffer.hpp
+VkTransformBuffer.cpp
+VkTextureMaterialBuffer.hpp
+VkTextureMaterialBuffer.cpp
+VkTextureModelDescriptorSet.hpp
+VkTextureModelDescriptorSet.cpp
 )
 
 target_include_directories(rx_component PUBLIC ../core ../flecs)

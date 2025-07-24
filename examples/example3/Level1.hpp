@@ -13,7 +13,9 @@
 #include "velocity.hpp"
 #include "time.hpp"
 #include "input.hpp"
-
+#include "VkInstancedColorModelBuffer.hpp"
+#include "VkInstancedColorModelDescriptorSet.hpp"
+#include "VkColorMesh.hpp"
 #define random(lower, upper) ((static_cast<float>(rand())/static_cast<float>(RAND_MAX))*((upper)-(lower)) + (lower))
 
 struct Actors;

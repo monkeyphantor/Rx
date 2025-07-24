@@ -37,17 +37,17 @@ void mesh_component_on_add(flecs::entity e, Rx::Component::ColorMesh& mesh, Rx::
     indexCopy.size = mesh.indices.size() * sizeof(uint32_t);
 
     RX_VK_MUTEX(
-    Rx::Core::beginSingleCommand(Rx::Core::single_command);
-    vkCmdCopyBuffer(Rx::Core::single_command.vkCommandBuffer,
+    Rx::Core::beginSingleCommand(Rx::Core::singleCommand);
+    vkCmdCopyBuffer(Rx::Core::singleCommand.vkCommandBuffer,
         vertexInterface.vkBuffer,
         colorMesh.vertexBuffer.vkBuffer,
         1, &vertexCopy);
-    vkCmdCopyBuffer(Rx::Core::single_command.vkCommandBuffer,
+    vkCmdCopyBuffer(Rx::Core::singleCommand.vkCommandBuffer,
         indexInterface.vkBuffer,
         colorMesh.indexBuffer.vkBuffer,
         1, &indexCopy);
-    Rx::Core::endSingleCommand(Rx::Core::single_command);
-    Rx::Core::submitSingleCommand(Rx::Core::single_command);)
+    Rx::Core::endSingleCommand(Rx::Core::singleCommand);
+    Rx::Core::submitSingleCommand(Rx::Core::singleCommand);)
 
     Rx::Core::destroyBufferInterface(indexInterface);
     Rx::Core::destroyBufferInterface(vertexInterface);

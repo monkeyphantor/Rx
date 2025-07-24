@@ -81,6 +81,8 @@ namespace Rx
         {
             Eye _eye;
 
+            _eye.position = glm::vec4(position, 1.0f);
+            _eye.direction = glm::vec4(direction, 0.0f);
             _eye.projView = createProjectionMatrix(fov,static_cast<float>(windowWidth)/static_cast<float>(windowHeight),nearClip, farClip);
             _eye.projView *= createXMatrix();
             _eye.projView *= createViewMatrix(position, direction, glm::vec3(0.f,-1.f,0.f));

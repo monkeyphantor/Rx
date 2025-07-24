@@ -8,6 +8,8 @@
         "${workspaceFolder}/application",
         "${workspaceFolder}/flecs/include",
         "${workspaceFolder}/shape",
+        "${workspaceFolder}/asset",
+        "${workspaceFolder}/converter",
         "${workspaceFolder}/examples/example1",
         "${workspaceFolder}/examples/example2",
         "${workspaceFolder}/../vcpkg/installed/x64-windows/include"

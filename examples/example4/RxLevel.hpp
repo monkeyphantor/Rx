@@ -1,8 +1,18 @@
 #pragma once
-#include "./application/gameWorld.hpp"
-#include "./application/level.hpp"
-#include "RxLevel2.hpp"
-
+#include "gameWorld.hpp"
+#include "level.hpp"
+#include "input.hpp"
+#include "flyingCamera.hpp"
+#include "meshArray.hpp"
+#include "Transform.hpp"
+#include "VkIndirectBuffer.hpp"
+#include "ColorMeshArray.hpp"
+#include "VkInstancedColorModelBuffer.hpp"
+#include "colorArrayGraphics.hpp"
+#include "Material.hpp"
+#include "ColorMesh.hpp"
+#include "VkColorMesh.hpp"
+#include "VkColorModelDescriptorSet.hpp"
 #define random(lower, upper) ((static_cast<float>(rand())/static_cast<float>(RAND_MAX))*((upper)-(lower)) + (lower))
 
 struct Actors;
@@ -25,7 +35,7 @@ namespace Rx {
                 world.import<Actors>();
                 world.import<Move>();
                 world.import<FireballSystem>();
-                world.import<LevelManager>();
+                //world.import<LevelManager>();
         }
 
         // Called when the level is unloaded
@@ -36,31 +46,31 @@ namespace Rx {
 
 } // namespace Rx
 
-struct LevelManager {
-    LevelManager(flecs::world& world) {
-        world.module<LevelManager>();
+// struct LevelManager {
+//     LevelManager(flecs::world& world) {
+//         world.module<LevelManager>();
         
-        world.system<>().kind(flecs::OnLoad).run([&](flecs::iter& it) {
+//         world.system().kind(flecs::OnLoad).run([&](flecs::iter& it) {
         
-            while(it.next()) {
-                auto player = it.world().entity("FlyingCamera");
-                if (!player.has<Rx::Component::FlyingCamera>()) {
-                    RX_LOGE("RxLevel","LevelManager","Player entity does not have a FlyingCamera component.");
-                }else{
-                    auto cam = player.get<Rx::Component::FlyingCamera>();
-                        if(glm::length(cam.position) > 1000.f){
+//             while(it.next()) {
+//                 auto player = it.world().entity("FlyingCamera");
+//                 if (!player.has<Rx::Component::FlyingCamera>()) {
+//                     RX_LOGE("RxLevel","LevelManager","Player entity does not have a FlyingCamera component.");
+//                 }else{
+//                     auto cam = player.get<Rx::Component::FlyingCamera>();
+//                         if(glm::length(cam.position) > 1000.f){
                             
-                            static_cast<Rx::GameWorld*>(world.get_ctx())->requestLevelSwitch<Rx::RxLevel2>();
-                            RX_LOGI("RxLevel","LevelManager","Switching to RxLevel2 due to player position.");
-                        }
-                }
+//                             static_cast<Rx::GameWorld*>(world.get_ctx())->requestLevelSwitch<Rx::RxLevel2>();
+//                             RX_LOGI("RxLevel","LevelManager","Switching to RxLevel2 due to player position.");
+//                         }
+//                 }
             
             
-            }
+//             }
 
-        }).add<LevelAsset>();
-    }
-};
+//         }).add<LevelAsset>();
+//     }
+// };
 struct Actors {
  Actors(flecs::world& world) {
         world.module<Actors>();
@@ -104,10 +114,10 @@ struct Actors {
         batchRenderEntity.set<Rx::Component::MeshArray>(meshArray);
         batchRenderEntity.add<Rx::Component::ColorMeshArray>();
 
-        Rx::Component::IndirectBuffer indirectBuffer;
+        Rx::Component::VkIndirectBuffer indirectBuffer;
         indirectBuffer.maxNumberCommands = 1000000;
         indirectBuffer.numberCommands = 0;
-        batchRenderEntity.set<Rx::Component::IndirectBuffer>(indirectBuffer);
+        batchRenderEntity.set<Rx::Component::VkIndirectBuffer>(indirectBuffer);
 
         Rx::Component::VkInstancedColorModelBuffer colorMeshInstanceBuffer;
         colorMeshInstanceBuffer.maxNumberInstances = 1000000;
@@ -118,6 +128,8 @@ struct Actors {
         auto rel = world.lookup("ColorMeshArrayInstanceRelation");
         const auto& commands = batchRenderEntity.get<Rx::Component::MeshArray>().meshNameToCommand;
 
+
+        
         // --- Generate World ---
 
         int landscapeSize = 100;
@@ -128,6 +140,7 @@ struct Actors {
                     grass.add(rel, batchRenderEntity)
                      .set<VkDrawIndexedIndirectCommand>(commands.at("Grass"))
                      .set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, {0,1,0}, glm::vec3(i, 0.f, j) })
+                     .set<Rx::Component::Material>({ glm::vec3(0.2f, 0.8f, 0.2f), random(0.1f,0.9f), random(0.1f,0.9f), glm::vec3(0.0f) })
                      .add<LevelAsset>();
     
                 }else{
@@ -136,6 +149,7 @@ struct Actors {
                     dirt.add(rel, batchRenderEntity)
                         .set<VkDrawIndexedIndirectCommand>(commands.at("Dirt"))
                         .set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, {0,1,0}, glm::vec3(i, 0.f, j) })
+                     .set<Rx::Component::Material>({ glm::vec3(0.5f, 0.35f, 0.05f), random(0.1f,0.9f), random(0.1f,0.9f), glm::vec3(0.0f) })
                         .add<LevelAsset>();
                 }
             }
@@ -156,6 +170,7 @@ struct Actors {
                      .add(rel, batchRenderEntity)
                      .set<VkDrawIndexedIndirectCommand>(commands.at("Trunk"))
                      .set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, {0,1,0}, glm::vec3(x, 1.f + h, z) })
+                     .set<Rx::Component::Material>({ glm::vec3(0.4f, 0.26f, 0.13f), random(0.1f,0.2f), random(0.1f,0.2f), glm::vec3(0.0f) })
                      .add<LevelAsset>();
             }
 
@@ -168,6 +183,7 @@ struct Actors {
                              .add(rel, batchRenderEntity)
                              .set<VkDrawIndexedIndirectCommand>(commands.at("Leaves"))
                              .set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, {0,1,0}, glm::vec3(x + lx, foliageY + ly, z + lz) })
+                         .set<Rx::Component::Material>({ glm::vec3(0.0f, 0.5f, 0.0f), random(0.1f,0.2f), random(0.1f,0.2f), glm::vec3(0.0f) })
                              .add<LevelAsset>();
                     }
                 }

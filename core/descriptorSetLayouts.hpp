@@ -25,6 +25,9 @@ namespace Rx
         void createInstancedColorMeshDescriptorSetLayout();
         void destroyInstancedColorMeshDescriptorSetLayout();
 
-
+        inline VkDescriptorSetLayout textureModelDescriptorSetLayout;
+        void createTextureModelDescriptorSetLayout();
+        void destroyTextureModelDescriptorSetLayout();
+        
     }
 }

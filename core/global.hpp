@@ -1,7 +1,7 @@
 #pragma once
 
 
-#define RX_DEBUG
+ #define RX_DEBUG
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>

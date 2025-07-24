@@ -21,7 +21,7 @@ namespace Rx
             VkFence vkFence;
         };
 
-        inline Rx::Core::SingleCommand single_command;
+        inline Rx::Core::SingleCommand singleCommand;
         inline Rx::Core::Command command[2];
 
         inline int commandIndex{0};

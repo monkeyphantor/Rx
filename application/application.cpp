@@ -1,5 +1,5 @@
 #include "application.hpp"
-
+#include "input.hpp"
 namespace Rx{
         Application::Application() : 
                 state(State::LOADING)
@@ -22,7 +22,9 @@ namespace Rx{
             std::cout << "--- Application starting ---" << std::endl;
 
             while (Rx::Core::updateCore() && state != State::QUITTING) {
-                std::cout << "Framerate: " << 1.f/Rx::Time::deltaTime << std::endl;
+                if(1.f/Rx::Time::deltaTime < 100.f) {
+                    std::cout << "Framerate: " << 1.f/Rx::Time::deltaTime << std::endl;
+                }
                 Rx::Core::getSwapchainImageIndex();
 
                 switch (state) {

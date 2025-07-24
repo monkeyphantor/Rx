@@ -77,17 +77,17 @@ namespace Rx{
             
             // Execute the copy commands
             RX_VK_MUTEX(
-                Rx::Core::beginSingleCommand(Rx::Core::single_command);
-                vkCmdCopyBuffer(Rx::Core::single_command.vkCommandBuffer,
+                Rx::Core::beginSingleCommand(Rx::Core::singleCommand);
+                vkCmdCopyBuffer(Rx::Core::singleCommand.vkCommandBuffer,
                     vertexInterface.vkBuffer,
                     colorMeshArray.vertexBuffer.vkBuffer,
                     1, &vertexCopy);
-                vkCmdCopyBuffer(Rx::Core::single_command.vkCommandBuffer,
+                vkCmdCopyBuffer(Rx::Core::singleCommand.vkCommandBuffer,
                     indexInterface.vkBuffer,
                     colorMeshArray.indexBuffer.vkBuffer,
                     1, &indexCopy);
-                Rx::Core::endSingleCommand(Rx::Core::single_command);
-                Rx::Core::submitSingleCommand(Rx::Core::single_command);
+                Rx::Core::endSingleCommand(Rx::Core::singleCommand);
+                Rx::Core::submitSingleCommand(Rx::Core::singleCommand);
             )
               
             // Clean up staging buffers

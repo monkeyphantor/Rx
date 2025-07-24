@@ -21,5 +21,9 @@ namespace Rx
         void createInstancedColorMeshPipelineLayout();
         void destroyInstancedColorMeshPipelineLayout();
 
+        inline VkPipelineLayout textureModelPipelineLayout;
+        void createTextureModelPipelineLayout();
+        void destroyTextureModelPipelineLayout();
+
     }
 }

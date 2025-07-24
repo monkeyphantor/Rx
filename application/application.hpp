@@ -13,7 +13,6 @@
 #include "level.hpp"
 #include "gameWorld.hpp"
 #include "loadingScreen.hpp"
-// --- Components and Tags (Mostly unchanged) ---
 
 
 // --- The Application Class (Multi-World Version) ---
