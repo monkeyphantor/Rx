@@ -16,17 +16,15 @@ find_package(glm REQUIRED)
 
 # --- Build The Main Executable ---
 # Define the main executable target, "RxWorld".
-add_executable(rx_converter main.cpp 
-TextureModelConverter.cpp TextureModelConverter.hpp
-SkeletonModelConverter.cpp SkeletonModelConverter.hpp)
+add_executable(rx_example7 main.cpp)
 
 # --- Link All Libraries ---
 # Link RxWorld against all the libraries it needs. Modern CMake uses imported targets
 # (like Vulkan::Vulkan, glm::glm, glfw) which also handle include directories automatically.
 
-target_include_directories(rx_converter PUBLIC ../core ../flecs ../component  ../application ../shape ../asset)
+target_include_directories(rx_example7 PUBLIC ../../core ../../flecs ../../component  ../../application ../../shape ../../asset)
 
-target_link_libraries(rx_converter PRIVATE
+target_link_libraries(rx_example7 PRIVATE
     # Our internal libraries
     rx_core
     rx_component
@@ -38,7 +36,6 @@ target_link_libraries(rx_converter PRIVATE
     Vulkan::Vulkan  # The imported target for Vulkan
     glm::glm        # The imported target for GLM
     glfw            # The imported target for GLFW
-    assimp::assimp  # The imported target for Assimp
 )
 
 

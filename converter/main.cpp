@@ -1,5 +1,5 @@
-//#include "SkeletonModelConverter.hpp"
 #include "TextureModelConverter.hpp"
+#include "SkeletonModelConverter.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -44,9 +44,7 @@ int main(int argc, char* argv[])
 
     // Call the appropriate converter function based on mode
     if (mode == "skelMod") {
-//        Rx::Converter::convertToTextureModelFile(inputFile, outputFile);
-        std::cerr << "Skeleton model conversion is not implemented yet." << std::endl;
-        return 1;
+        Rx::Converter::convertToSkeletonModelFile(inputFile, outputFile);
     } else if (mode == "texMod") {
         Rx::Converter::convertToTextureModelFile(inputFile, outputFile);
     } else {

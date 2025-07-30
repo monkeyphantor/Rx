@@ -7,6 +7,8 @@ LoadTexture.hpp
 LoadTexture.cpp
 LoadTextureModel.hpp
 LoadTextureModel.cpp
+LoadSkeletonModel.hpp
+LoadSkeletonModel.cpp
 )
 
 target_include_directories(rx_asset PUBLIC ../core ../flecs ../component ../application)

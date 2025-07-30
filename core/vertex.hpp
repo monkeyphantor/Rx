@@ -17,5 +17,15 @@ namespace Rx
             glm::vec3 normal;
             glm::vec2 texCoord;
         };
+
+        struct Skeleton
+        {
+            glm::vec3 position{};
+            glm::vec3 normal{};
+            glm::vec2 texCoord{};
+            glm::ivec4 bones = glm::ivec4(0);
+            glm::vec4 weights = glm::vec4(0.0f);
+            int nodeIndex = -1;
+        };
     }
 }

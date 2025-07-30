@@ -18,6 +18,12 @@
 #include "VkTextureMeshArray.hpp"
 #include "VkTextureMaterialBuffer.hpp"
 #include "TransformInstance.hpp"
+#include "SkeletonBuffer.hpp"
+#include "AnimationStateMachine.hpp"
+#include "VkSkeletonArrayBuffer.hpp"
+#include "NodeTransform.hpp"
+#include "VkSkeletonMeshArray.hpp"
+#include "VkSkeletonModelDescriptorSet.hpp"
 
 namespace Rx{
 
@@ -166,6 +172,29 @@ namespace Rx{
             .event(flecs::OnRemove)
             .each(Rx::Component::textureModelDescriptorSet_component_on_remove);
 
+            world.observer<Rx::Component::SkeletonMeshArray, Rx::Component::VkSkeletonMeshArray>()
+            .event(flecs::OnAdd)
+            .each(Rx::Component::vkSkeletonMeshArray_component_on_add);
+
+            world.observer<Rx::Component::VkSkeletonMeshArray>()
+            .event(flecs::OnRemove)
+            .each(Rx::Component::vkSkeletonMeshArray_component_on_remove);
+
+            world.observer<Rx::Component::VkSkeletonArrayBuffer>()
+            .event(flecs::OnSet)
+            .each(Rx::Component::vkSkeletonArrayBuffer_component_on_set);
+
+            world.observer<Rx::Component::VkSkeletonArrayBuffer>()
+            .event(flecs::OnRemove)
+            .each(Rx::Component::vkSkeletonArrayBuffer_component_on_remove);
+
+            world.observer<Rx::Component::VkTextureArray, Rx::Component::VkTextureMaterialBuffer, Rx::Component::VkTransformBuffer, Rx::Component::VkSkeletonArrayBuffer, Rx::Component::VkSkeletonModelDescriptorSet>()
+            .event(flecs::OnAdd)
+            .each(Rx::Component::vkSkeletonModelDescriptorSet_component_on_add);
+
+            world.observer<Rx::Component::VkSkeletonModelDescriptorSet>()
+            .event(flecs::OnRemove)
+            .each(Rx::Component::vkSkeletonModelDescriptorSet_component_on_remove);
         }
 
         void GameWorldBase::registerGraphicsBase(){
@@ -186,6 +215,11 @@ namespace Rx{
             colorMeshArrayInstanceRelation = world.entity("ColorMeshArrayInstanceRelation");
             instancedColorMeshRelation = world.entity("InstancedColorMeshRelation");
             textureModelInstanceRelation = world.entity("TextureModelInstanceRelation");
+            IsSkeletonModelInstanceOf = world.entity("IsSkeletonModelInstanceOf");
+            IsAnimationOf = world.entity("IsAnimationOf");
+            IsRootNodeOf = world.entity("IsRootNodeOf");
+            IsChildNodeOf = world.entity("IsChildNodeOf");
+
 
             world.system<Component::Transform, Component::PointLight>()
             .kind(postUpdate)
@@ -206,6 +240,7 @@ namespace Rx{
                 }
 
                 pointLightBuffer.numberPointLights[0] = bufferIndex;
+
             });
 
             world.system<Component::Transform, Component::DirectionalLight>()
@@ -466,6 +501,91 @@ namespace Rx{
                     }
                 });
 
+
+             world.system("SkeletonModelUpdate")
+                .with<Rx::Component::Transform>()
+                .with<Rx::Component::AnimationStateMachine>()
+                .with<Rx::Component::SkeletonBuffer>()
+                .with<Rx::Component::SkeletonInstance>()
+                .with(IsSkeletonModelInstanceOf, "$parent")
+                .with<ShouldBeUpdated>().src("$parent") 
+                .group_by(IsSkeletonModelInstanceOf)
+                .kind(preRender)
+                .multi_threaded(true)
+                .run([&](flecs::iter& it) {
+                    uint64_t group_id = 0;
+                    uint32_t instanceIndex = 0;
+
+                    flecs::entity parent;
+
+                    while(it.next()) {
+                         if(group_id != it.group_id()) {
+                            if(group_id != 0) {
+                                // Finalize the previous group before starting a new one
+                                auto prev_parent = it.world().entity(group_id);
+                                prev_parent.get_mut<Rx::Component::VkTransformBuffer>().numberTransforms = instanceIndex;
+                                prev_parent.get_mut<Rx::Component::VkSkeletonArrayBuffer>().numberSkeletons = instanceIndex;
+                                auto& indirectBuffer = prev_parent.get_mut<Rx::Component::IndirectBuffer>();
+                                indirectBuffer.setInstanceCount(instanceIndex);
+                                prev_parent.get_mut<Rx::Component::VkIndirectBuffer>().copyFrom(indirectBuffer);
+                            }
+                            group_id = it.group_id();
+                            instanceIndex = 0; 
+                         }
+
+                        parent = it.world().entity(it.group_id());
+
+                        RX_ASSERT(parent.is_alive(), "TextureModelUpdate", "System", "Parent entity is not alive");
+                        RX_ASSERT(parent.has<Rx::Component::IndirectBuffer>(), "TextureModelUpdate", "System", "Parent entity does not have IndirectBuffer component");
+                        RX_ASSERT(parent.has<Rx::Component::VkIndirectBuffer>(), "TextureModelUpdate", "System", "Parent entity does not have VkIndirectBuffer component");
+                        RX_ASSERT(parent.has<Rx::Component::VkTransformBuffer>(), "TextureModelUpdate", "System", "Parent entity does not have VkTransformBuffer component");
+
+
+                        auto& indirectBuffer = parent.get_mut<Rx::Component::IndirectBuffer>();
+                        auto& vkIndirectBuffer = parent.get_mut<Rx::Component::VkIndirectBuffer>();
+                        auto& transformBuffer = parent.get_mut<Rx::Component::VkTransformBuffer>();
+                        auto& vkSkeletonArrayBuffer = parent.get_mut<Rx::Component::VkSkeletonArrayBuffer>();
+
+
+                        Rx::Component::TransformInstance* transformInstances = (Rx::Component::TransformInstance*) transformBuffer.buffer.pMemory;
+                        size_t transformCapacity = transformBuffer.maxNumberTransforms;
+
+
+                        const auto& transforms = it.field<const Rx::Component::Transform>(0);
+                        auto animationStateMachines = it.field<Rx::Component::AnimationStateMachine>(1);
+                        auto skeletonBuffers = it.field<Rx::Component::SkeletonBuffer>(2);
+                        auto skeletonInstances = it.field<Rx::Component::SkeletonInstance>(3);
+
+                        for (auto i : it) {
+                            if (instanceIndex >= transformCapacity) {
+                                std::cerr << "Error: buffer overflow for parent "
+                                        << parent.name() << "!\n";
+                                break;
+                            }
+                            
+                            auto transform = transforms[i].getTransformMatrix();
+                            transformInstances[instanceIndex].transform = transform;
+                            transformInstances[instanceIndex].normalTransform = glm::transpose(glm::inverse(transform));
+
+                            auto entity = it.entity(i);
+                            animationStateMachines[i].update(world, transforms[i], skeletonBuffers[i], skeletonInstances[i], entity);
+                            skeletonBuffers[i].toVkSkeletonArrayBuffer(vkSkeletonArrayBuffer, instanceIndex);
+
+                            instanceIndex++;
+                        }
+                    }
+
+                    if(group_id != 0) {
+                        // Finalize the previous group before starting a new one
+                        auto prev_parent = it.world().entity(group_id);
+                        prev_parent.get_mut<Rx::Component::VkTransformBuffer>().numberTransforms = instanceIndex;
+                        prev_parent.get_mut<Rx::Component::VkSkeletonArrayBuffer>().numberSkeletons = instanceIndex;
+                        auto& indirectBuffer = prev_parent.get_mut<Rx::Component::IndirectBuffer>();
+                        indirectBuffer.setInstanceCount(instanceIndex);
+                        prev_parent.get_mut<Rx::Component::VkIndirectBuffer>().copyFrom(indirectBuffer);
+                    }
+                });
+
             world.system()
             .kind(onRenderBegin)
             .with<RenderRunning>().src(game)
@@ -661,6 +781,48 @@ namespace Rx{
                 }
             });
 
+            world.system<Rx::Component::VkSkeletonMeshArray,  Rx::Component::VkSkeletonModelDescriptorSet, Rx::Component::VkIndirectBuffer>()
+            .kind(onRender)
+            .with<RenderRunning>().src(game)
+            .run([](flecs::iter& it) {
+                vkCmdBindPipeline
+                (Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                Rx::Core::skeletonModelPipeline);
+
+                while(it.next()) {
+                    auto skeletonMeshes = it.field<Rx::Component::VkSkeletonMeshArray>(0);
+                    auto descriptorSets = it.field<Rx::Component::VkSkeletonModelDescriptorSet>(1);
+                    auto indirectBuffers = it.field<Rx::Component::VkIndirectBuffer>(2);
+
+                    for( auto i : it) {
+                     
+                        vkCmdBindDescriptorSets
+                        (Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
+                        VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        Rx::Core::skeletonModelPipelineLayout,
+                        0, 1,
+                        &descriptorSets[i].vkDescriptorSet, 0, nullptr);
+
+                        VkDeviceSize offset[] = { 0 };    
+                        vkCmdBindVertexBuffers
+                        (Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
+                        0, 1, 
+                        &skeletonMeshes[i].vertexBuffer.vkBuffer, offset);
+
+                        vkCmdBindIndexBuffer
+                        (Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
+                        skeletonMeshes[i].indexBuffer.vkBuffer,
+                        0, VK_INDEX_TYPE_UINT32);
+
+                        vkCmdDrawIndexedIndirect
+                        (Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
+                        indirectBuffers[i].buffer.vkBuffer,
+                        0, indirectBuffers[i].numberCommands,
+                        sizeof(VkDrawIndexedIndirectCommand));
+                    }
+                }
+            });
 
             world.system()
             .kind(onRenderEnd)

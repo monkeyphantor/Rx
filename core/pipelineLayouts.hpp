@@ -25,5 +25,8 @@ namespace Rx
         void createTextureModelPipelineLayout();
         void destroyTextureModelPipelineLayout();
 
+        inline VkPipelineLayout skeletonModelPipelineLayout;
+        void createSkeletonModelPipelineLayout();
+        void destroySkeletonModelPipelineLayout();
     }
 }

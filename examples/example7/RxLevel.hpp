@@ -23,8 +23,13 @@
 #include "VkColorMesh.hpp"
 #include "VkColorModelBuffer.hpp"
 #include "VkColorModelDescriptorSet.hpp"
-#include "LoadTextureModel.hpp"
+#include "LoadSkeletonModel.hpp"
 #include "flyingCamera.hpp"
+#include "SkeletonBuffer.hpp"
+#include "AnimationStateMachine.hpp"
+#include "AnimationMap.hpp"
+#include "Skeleton.hpp"
+#include "AnimationClip.hpp"
 
 struct Actors;
 class RxLevel : public Rx::Level
@@ -67,33 +72,26 @@ struct Actors{
             glm::vec3(0.f, 0.f, 0.f)  //
         });
 
-        Rx::Shape::ColorCube cube(glm::vec3(100.f, 1.f, 100.f), glm::vec4(0.f, 1.f, 0.f,1.f));
+        
+        world.get_mut<Rx::Component::FlyingCamera>().speed = 100.f;
 
-        //Rx::Shape::ColorSphere sphere(1.f, 16, 16, glm::vec3(1.f, 0.f, 0.f));
+        auto asset = Rx::Asset::loadSkeletonModel("C:/Users/robry/Desktop/3DModels/wizard.skelmod.rx", world, "SkeletonModelAsset", 1024);
 
-
-        // auto e = world.entity();
-        // e.set<Rx::Component::ColorMesh>({ cube.getVertices(), cube.getIndices() });
-        // e.add<Rx::Component::VkColorMesh>();
-        // e.add<Rx::Component::VkColorModelBuffer>();
-        // e.add<Rx::Component::VkColorModelDescriptorSet>();
-        // e.set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, -2.f, 0.f) });
-        // e.set<Rx::Component::Material>({ glm::vec4(1.f, 0.f, 0.f, 1.f), 0.5f, 0.5f, glm::vec3(0.f) });
-   
-        world.get_mut<Rx::Component::FlyingCamera>().speed = 10.f;
-
-        auto asset = Rx::Asset::loadTextureModel("C:/Users/robry/Desktop/3DModels/wizard.texmod.rx", world, "TextureModelAsset", 1024);
-        auto rel = world.lookup("TextureModelInstanceRelation");
-
+        auto animationPrefab = asset.get<Rx::Component::Skeleton>().animationPrefab;
+        auto& map = animationPrefab.get<Rx::Component::AnimationMap>().animations;
+        auto& animClip = animationPrefab.get<Rx::Component::AnimationClip>(map.at("Run"));
+        Rx::Component::AnimationStateMachine animStateMachine;
+        animStateMachine.addAnimationState("Run", Rx::Component::SingleAnimation{map.at("Run"), 0.0f, 1.f, animClip.duration, animClip.ticksPerSecond});
+        animStateMachine.setCurrentState("Run");
 
         float space = 4.f;
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 20; i++)
         {
-            for (int j = 0; j < 10; j++)
+            for (int j = 0; j < 20; j++)
             {
-                auto e = world.entity();
-                e.add(rel, asset);
-                e.set<Rx::Component::Transform>({ glm::vec3(1.f), 3.14f/2.f, glm::vec3(1.f, 0.f, 0.f), glm::vec3(i * space, 0.f, j * space) });
+                auto e = Rx::Asset::createSkeletonModelInstance(world, asset, "Wizard_" + std::to_string(i) + "_" + std::to_string(j));
+                e.set<Rx::Component::Transform>({ glm::vec3(1.0f), 0.f * 3.14f/2.f, glm::vec3(1.f, 0.f, 0.f), glm::vec3(i * space, 0.f, j * space) });
+                e.set<Rx::Component::AnimationStateMachine>(animStateMachine);
                 e.add<LevelAsset>();
             }
         }

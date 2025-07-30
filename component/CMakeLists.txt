@@ -42,6 +42,20 @@ VkTextureMaterialBuffer.hpp
 VkTextureMaterialBuffer.cpp
 VkTextureModelDescriptorSet.hpp
 VkTextureModelDescriptorSet.cpp
+AnimationBone.hpp
+AnimationBone.cpp
+AnimationClip.hpp
+AnimationClip.cpp
+AnimationStateMachine.hpp
+AnimationStateMachine.cpp
+SkeletonMeshArray.hpp
+SkeletonMeshArray.cpp
+VkSkeletonMeshArray.hpp
+VkSkeletonMeshArray.cpp
+VkSkeletonArrayBuffer.hpp
+VkSkeletonArrayBuffer.cpp
+VkSkeletonModelDescriptorSet.hpp
+VkSkeletonModelDescriptorSet.cpp
 )
 
 target_include_directories(rx_component PUBLIC ../core ../flecs)

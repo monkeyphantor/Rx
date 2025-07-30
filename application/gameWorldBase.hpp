@@ -43,7 +43,15 @@ namespace Rx{
         flecs::entity colorMeshArrayInstanceRelation;
         flecs::entity instancedColorMeshRelation;
         flecs::entity textureModelInstanceRelation;
-        
+        flecs::entity IsSkeletonModelInstanceOf;
+        flecs::entity IsAnimationOf;
+        flecs::entity IsAnimationInstanceOf;
+        flecs::entity IsRootNodeOf;
+        flecs::entity IsRootNodeInstanceOf;
+        flecs::entity IsChildNodeOf;
+        flecs::entity IsChildNodeInstanceOf;
+
+
     private:
         void registerComponentsBase();
 

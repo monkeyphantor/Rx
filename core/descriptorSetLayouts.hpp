@@ -29,5 +29,9 @@ namespace Rx
         void createTextureModelDescriptorSetLayout();
         void destroyTextureModelDescriptorSetLayout();
         
+        inline VkDescriptorSetLayout skeletonModelDescriptorSetLayout;
+        void createSkeletonModelDescriptorSetLayout();
+        void destroySkeletonModelDescriptorSetLayout();
+        
     }
 }
