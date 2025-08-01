@@ -8,7 +8,6 @@ namespace Rx {
             char name[128];
             glm::mat4 offset;
             int numberChildren;
-            int children[32];
             int nodeIndex;
             int boneIndex;
         };

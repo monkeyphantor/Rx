@@ -215,8 +215,10 @@ namespace Rx{
             colorMeshArrayInstanceRelation = world.entity("ColorMeshArrayInstanceRelation");
             instancedColorMeshRelation = world.entity("InstancedColorMeshRelation");
             textureModelInstanceRelation = world.entity("TextureModelInstanceRelation");
+            IsSkeletonOf = world.entity("IsSkeletonOf");
             IsSkeletonModelInstanceOf = world.entity("IsSkeletonModelInstanceOf");
             IsAnimationOf = world.entity("IsAnimationOf");
+            IsNodeOf = world.entity("IsNodeOf");
             IsRootNodeOf = world.entity("IsRootNodeOf");
             IsChildNodeOf = world.entity("IsChildNodeOf");
 
@@ -506,12 +508,10 @@ namespace Rx{
                 .with<Rx::Component::Transform>()
                 .with<Rx::Component::AnimationStateMachine>()
                 .with<Rx::Component::SkeletonBuffer>()
-                .with<Rx::Component::SkeletonInstance>()
                 .with(IsSkeletonModelInstanceOf, "$parent")
                 .with<ShouldBeUpdated>().src("$parent") 
                 .group_by(IsSkeletonModelInstanceOf)
                 .kind(preRender)
-                .multi_threaded(true)
                 .run([&](flecs::iter& it) {
                     uint64_t group_id = 0;
                     uint32_t instanceIndex = 0;
@@ -545,7 +545,7 @@ namespace Rx{
                         auto& vkIndirectBuffer = parent.get_mut<Rx::Component::VkIndirectBuffer>();
                         auto& transformBuffer = parent.get_mut<Rx::Component::VkTransformBuffer>();
                         auto& vkSkeletonArrayBuffer = parent.get_mut<Rx::Component::VkSkeletonArrayBuffer>();
-
+                        auto& skeleton = parent.get<Rx::Component::Skeleton>();
 
                         Rx::Component::TransformInstance* transformInstances = (Rx::Component::TransformInstance*) transformBuffer.buffer.pMemory;
                         size_t transformCapacity = transformBuffer.maxNumberTransforms;
@@ -554,7 +554,6 @@ namespace Rx{
                         const auto& transforms = it.field<const Rx::Component::Transform>(0);
                         auto animationStateMachines = it.field<Rx::Component::AnimationStateMachine>(1);
                         auto skeletonBuffers = it.field<Rx::Component::SkeletonBuffer>(2);
-                        auto skeletonInstances = it.field<Rx::Component::SkeletonInstance>(3);
 
                         for (auto i : it) {
                             if (instanceIndex >= transformCapacity) {
@@ -568,7 +567,7 @@ namespace Rx{
                             transformInstances[instanceIndex].normalTransform = glm::transpose(glm::inverse(transform));
 
                             auto entity = it.entity(i);
-                            animationStateMachines[i].update(world, transforms[i], skeletonBuffers[i], skeletonInstances[i], entity);
+                            animationStateMachines[i].update(world, skeletonBuffers[i], skeleton.nodes, entity);
                             skeletonBuffers[i].toVkSkeletonArrayBuffer(vkSkeletonArrayBuffer, instanceIndex);
 
                             instanceIndex++;
@@ -585,6 +584,40 @@ namespace Rx{
                         prev_parent.get_mut<Rx::Component::VkIndirectBuffer>().copyFrom(indirectBuffer);
                     }
                 });
+
+            world.system("SkeletonModelBoneTransformUpdate")
+            .with<Rx::Component::Transform>()
+            .with<Rx::Component::NodeIndex>()
+            .with(IsNodeOf, "$parent")
+            .group_by(IsNodeOf)
+            .kind(preRender)
+            .run([&](flecs::iter& it) {
+                    uint64_t group_id = 0;
+                    uint32_t instanceIndex = 0;
+
+                    flecs::entity parent;
+                    const Component::SkeletonBuffer* pSkeletonBuffer;
+                    glm::mat4 transform;
+
+                    while(it.next()) {
+                        if(group_id != it.group_id()) {
+                            group_id = it.group_id();
+                            parent = it.world().entity(it.group_id());
+                            RX_ASSERT(parent.is_alive(), "SkeletonModelBoneTransformUpdate", "System", "Parent entity is not alive");
+                            RX_ASSERT(parent.has<Rx::Component::SkeletonBuffer>(), "SkeletonModelBoneTransformUpdate", "System", "Parent entity does not have SkeletonBuffer component");
+                            RX_ASSERT(parent.has<Rx::Component::Transform>(), "SkeletonModelBoneTransformUpdate", "System", "Parent entity does not have Transform component");
+                            pSkeletonBuffer = &parent.get<Rx::Component::SkeletonBuffer>();
+                            transform = parent.get<Rx::Component::Transform>().getTransformMatrix();
+                        }
+
+                        auto transforms = it.field<const Rx::Component::Transform>(0);
+                        auto nodeIndices = it.field<const Rx::Component::NodeIndex>(1);
+
+                        for (auto i : it) {
+                            transforms[i].fromGlmMat4(transform * pSkeletonBuffer->transforms[nodeIndices[i].index].local);
+                        }
+                    }
+            });
 
             world.system()
             .kind(onRenderBegin)

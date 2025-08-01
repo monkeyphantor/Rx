@@ -26,24 +26,22 @@ public:
     std::vector<Component::RotationKey> rotations;
     std::vector<Component::ScalingKey> scalings;
 	
-    std::tuple<glm::vec3, glm::quat, glm::vec3> getLocalTransform(float animationTime);
+    std::tuple<glm::vec3, glm::quat, glm::vec3> getLocalTransform(float animationTime) const;
     std::string getBoneName() const { return name; }	
 
-    int getPositionIndex(float animationTime);
+    int getPositionIndex(float animationTime) const;
 
-    int getRotationIndex(float animationTime);
+    int getRotationIndex(float animationTime) const;
 
-    int getScaleIndex(float animationTime);
+    int getScaleIndex(float animationTime) const;
 
 private:
 
-    float getScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime);
+    float getScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime)  const;
 
-    glm::vec3 interpolatePosition(float animationTime);
-
-    glm::quat interpolateRotation(float animationTime);
-
-    glm::vec3 interpolateScaling(float animationTime);
+    glm::vec3 interpolatePosition(float animationTime) const;
+    glm::quat interpolateRotation(float animationTime) const;
+    glm::vec3 interpolateScaling(float animationTime) const;
 };
     }
 }

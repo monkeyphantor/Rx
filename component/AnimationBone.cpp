@@ -3,7 +3,7 @@
 namespace Rx {
 namespace Component {
 
-    std::tuple<glm::vec3, glm::quat, glm::vec3> AnimationBone::getLocalTransform(float animationTime)
+    std::tuple<glm::vec3, glm::quat, glm::vec3> AnimationBone::getLocalTransform(float animationTime) const
     {
         glm::vec3 translation = interpolatePosition(animationTime);
         glm::quat rotation = interpolateRotation(animationTime);
@@ -12,7 +12,7 @@ namespace Component {
         return {translation, rotation, scale};
     }
 
-    int AnimationBone::getPositionIndex(float animationTime)
+    int AnimationBone::getPositionIndex(float animationTime) const
     {
         for (int index = 0; index < positions.size() - 1; ++index)
         {
@@ -24,7 +24,7 @@ namespace Component {
         return static_cast<int>(positions.size()) - 2;
     }
 
-    int AnimationBone::getRotationIndex(float animationTime)
+    int AnimationBone::getRotationIndex(float animationTime) const
     {
         for (int index = 0; index < rotations.size() - 1; ++index)
         {
@@ -36,7 +36,7 @@ namespace Component {
         return static_cast<int>(rotations.size()) - 2;
     }
 
-    int AnimationBone::getScaleIndex(float animationTime)
+    int AnimationBone::getScaleIndex(float animationTime) const
     {
         for (int index = 0; index < scalings.size() - 1; ++index)
         {
@@ -49,7 +49,7 @@ namespace Component {
     }
 
 
-    float AnimationBone::getScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime)
+    float AnimationBone::getScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime) const
     {
         float scaleFactor = 0.0f;
         float midWayLength = animationTime - lastTimeStamp;
@@ -58,7 +58,7 @@ namespace Component {
         return scaleFactor;
     }
 
-    glm::vec3 AnimationBone::interpolatePosition(float animationTime)
+    glm::vec3 AnimationBone::interpolatePosition(float animationTime) const
     {
         if (1 == positions.size()){
             return positions[0].position;
@@ -73,7 +73,7 @@ namespace Component {
         return finalPosition;
     }
 
-    glm::quat AnimationBone::interpolateRotation(float animationTime)
+    glm::quat AnimationBone::interpolateRotation(float animationTime) const
     {
         if (1 == rotations.size())
         {
@@ -91,7 +91,7 @@ namespace Component {
         return finalRotation;
     }
 
-    glm::vec3 AnimationBone::interpolateScaling(float animationTime)
+    glm::vec3 AnimationBone::interpolateScaling(float animationTime) const
     {
         if (1 == scalings.size()){
             return scalings[0].scaling;

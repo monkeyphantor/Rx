@@ -9,6 +9,7 @@ namespace Component {
         float duration;
         float ticksPerSecond;
         float durationInSeconds;
+        std::vector<AnimationBone> bones;
     };
 
 }

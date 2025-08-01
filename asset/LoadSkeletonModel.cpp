@@ -24,38 +24,25 @@
 #include "LocalTransform.hpp"
 #include "SkeletonInstance.hpp"
 #include "NodeChildren.hpp"
-
+#include "Transform.hpp"
 namespace Rx {
 
 namespace Asset{
 
-     void createNodePrefabs(flecs::world& world, const std::vector<Component::Node>& nodes, std::vector<flecs::entity>& nodePrefabs, const std::string& assetName, const flecs::entity& parent, std::vector<flecs::entity>& animationClipEntities, std::vector<std::vector<std::vector<Component::PositionKey>>> positionKeys, std::vector<std::vector<std::vector<Component::RotationKey>>> rotationKeys, std::vector<std::vector<std::vector<Component::ScalingKey>>> scalingKeys) {
+     void createAnimationBones(flecs::world& world, const std::vector<Component::Node>& nodes, uint32_t& nodeIndex, uint32_t animationClipIndex, std::vector<Component::AnimationBone>& animationBones, std::vector<std::vector<std::vector<Component::PositionKey>>>& positionKeys, std::vector<std::vector<std::vector<Component::RotationKey>>>& rotationKeys, std::vector<std::vector<std::vector<Component::ScalingKey>>>& scalingKeys) {
 
-            flecs::entity nodePrefab = world.prefab((assetName + "_Node_" + nodes[nodePrefabs.size()].name).c_str());
-            uint32_t nodeIndex = static_cast<uint32_t>(nodePrefabs.size());
-            nodePrefabs.push_back(nodePrefab);
-            nodePrefab.set<Rx::Component::NodeIndex>({nodeIndex});
             if(nodes[nodeIndex].isBone){
-                nodePrefab.set<Rx::Component::BoneIndex>({static_cast<uint32_t>(nodes[nodeIndex].boneIndex)});
-                nodePrefab.set<Rx::Component::InvBindPose>({nodes[nodeIndex].offset});
-                for(uint32_t i = 0; i < animationClipEntities.size(); i++){
-                    Rx::Component::AnimationBone bone(
+                animationBones.push_back(std::move(Rx::Component::AnimationBone(
                         nodes[nodeIndex].name,
-                        std::move(positionKeys[i][nodes[nodeIndex].boneIndex]),
-                        std::move(rotationKeys[i][nodes[nodeIndex].boneIndex]),
-                        std::move(scalingKeys[i][nodes[nodeIndex].boneIndex])
-                    );
-                    flecs::entity animationClipEntity = animationClipEntities[i];
-                    nodePrefab.set<Rx::Component::AnimationBone>(animationClipEntity, std::move(bone));
-                }
-            }else{
-                Rx::Component::LocalTransform localTransform;
-                localTransform.fromGlmMat4(nodes[nodeIndex].offset);
-                nodePrefab.set<Rx::Component::LocalTransform>(localTransform);
+                        std::move(positionKeys[animationClipIndex][nodes[nodeIndex].boneIndex]),
+                        std::move(rotationKeys[animationClipIndex][nodes[nodeIndex].boneIndex]),
+                        std::move(scalingKeys[animationClipIndex][nodes[nodeIndex].boneIndex])
+                    )));
             }
-
-            for(int j = 0; j < nodes[nodeIndex].numberChildren; j++){
-                createNodePrefabs(world, nodes, nodePrefabs, assetName, nodePrefab, animationClipEntities, positionKeys, rotationKeys, scalingKeys);
+            
+			uint32_t currentNodeIndex = nodeIndex;
+            for(int j = 0; j < nodes[currentNodeIndex].numberChildren; j++){
+                createAnimationBones(world, nodes, ++nodeIndex, animationClipIndex, animationBones, positionKeys, rotationKeys, scalingKeys);
             }
         }
 
@@ -154,7 +141,8 @@ namespace Asset{
             loadData(data, nodes[i].offset, offset);
             loadData(data, nodes[i].numberChildren, offset);
             for(uint32_t j = 0; j < 32; j++){
-               loadData(data, nodes[i].children[j], offset);
+                int i;
+                loadData(data, i, offset);
             }
 			loadData(data, nodes[i].nodeIndex, offset);
             loadData(data, nodes[i].boneIndex, offset);
@@ -241,42 +229,15 @@ namespace Asset{
             animationClip.duration = animationHeaders[i].duration;
             animationClip.ticksPerSecond = animationHeaders[i].ticksPerSecond;
             animationClip.durationInSeconds = animationHeaders[i].duration / animationHeaders[i].ticksPerSecond;
+            uint32_t nodeIndex = 0;
+            createAnimationBones(world, nodes, nodeIndex, i, animationClip.bones, positionKeys, rotationKeys, scalingKeys);
             animationPrefab.set<Rx::Component::AnimationClip>(animationClipEntity, animationClip);
             animationClipEntities.push_back(animationClipEntity);
             map.animations[animationHeaders[i].name] = animationClipEntity;
         }
         animationPrefab.set<Rx::Component::AnimationMap>({map});
 
-        flecs::entity rootNodeEntity = world.entity((assetName + "_RootNode_" + nodes[0].name).c_str());
-        rootNodeEntity.set<Rx::Component::NodeIndex>({0});
-        if(nodes[0].isBone){
-            rootNodeEntity.set<Rx::Component::BoneIndex>({0});
-            rootNodeEntity.set<Rx::Component::InvBindPose>({nodes[0].offset});
-            for(uint32_t i = 0; i < animationClipEntities.size(); i++){
-                 // Explicitly create the AnimationBone component first
-                Rx::Component::AnimationBone bone(
-                    nodes[0].name,
-                    std::move(positionKeys[i][0]),
-                    std::move(rotationKeys[i][0]),
-                    std::move(scalingKeys[i][0])
-                );
-                flecs::entity animationClipEntity = animationClipEntities[i];
-                rootNodeEntity.set<Rx::Component::AnimationBone>(animationClipEntity, std::move(bone));
-            }
-        }else{
-            Rx::Component::LocalTransform localTransform;
-            localTransform.fromGlmMat4(nodes[0].offset);
-            rootNodeEntity.set<Rx::Component::LocalTransform>(localTransform);
-        }
-
-
-        std::vector<flecs::entity> nodePrefabs;
-        nodePrefabs.push_back(rootNodeEntity);
-		for (uint32_t i = 0; i < nodes[0].numberChildren; i++) {
-			createNodePrefabs(world, nodes, nodePrefabs, assetName, rootNodeEntity, animationClipEntities, positionKeys, rotationKeys, scalingKeys);
-		}
-
-        asset.set<Rx::Component::Skeleton>({nodes, nodePrefabs, animationPrefab});
+        asset.set<Rx::Component::Skeleton>({nodes, animationPrefab});
 
         return asset;
     }
@@ -284,19 +245,17 @@ namespace Asset{
 
 
 
-    void createNodeInstanceEntities(flecs::world& world, const std::string& skelInstanceName, const Component::Skeleton& skeleton, std::vector<flecs::entity>& nodeEntities, const flecs::entity& parent) {
+    void createNodeInstanceEntities(flecs::world& world, const std::string& skelInstanceName, uint32_t& nodeIndex, const Component::Skeleton& skeleton, const flecs::entity& parent, flecs::entity& instanceEntity) {
 
-        uint32_t nodeIndex = static_cast<uint32_t>(nodeEntities.size());
-        flecs::entity nodeInstanceEntity = world.entity((std::string(skeleton.nodePrefabs[nodeIndex].name().c_str()) + "_Instance_of_" + skelInstanceName).c_str());
-        nodeEntities.push_back(nodeInstanceEntity);
-        nodeInstanceEntity.is_a(skeleton.nodePrefabs[nodeIndex]);
+        flecs::entity nodeInstanceEntity = world.entity((skelInstanceName + "_Node_" + skeleton.nodes[nodeIndex].name).c_str());
+        nodeInstanceEntity.add(world.lookup("IsNodeOf"), instanceEntity);
         nodeInstanceEntity.add(world.lookup("IsChildNodeOf"), parent);
-        Rx::Component::NodeChildren nodeChildren;
-        nodeChildren.numberChildren = skeleton.nodes[nodeIndex].numberChildren;
-        nodeInstanceEntity.set<Rx::Component::NodeChildren>(nodeChildren);
+        nodeInstanceEntity.add<Rx::Component::Transform>();
+        nodeInstanceEntity.set<Rx::Component::NodeIndex>({nodeIndex});
 
-        for(int j = 0; j < skeleton.nodes[nodeIndex].numberChildren; j++){
-            createNodeInstanceEntities(world, skelInstanceName, skeleton, nodeEntities, nodeInstanceEntity);
+		uint32_t currentNodeIndex = nodeIndex;
+        for(int j = 0; j < skeleton.nodes[currentNodeIndex].numberChildren; j++){
+            createNodeInstanceEntities(world, skelInstanceName, ++nodeIndex, skeleton, nodeInstanceEntity, instanceEntity);
         }
     }
 
@@ -319,24 +278,17 @@ namespace Asset{
         flecs::entity animationInstanceEntity = world.entity((std::string(animationPrefab.name().c_str()) + "_Instance_of_" + name).c_str());
         animationInstanceEntity.is_a(animationPrefab);
         animationInstanceEntity.add(world.lookup("IsAnimationOf"), instanceEntity);
-        
-        flecs::entity rootNodeEntityPrefab = skeleton.nodePrefabs[0];
 
-        flecs::entity rootNodeEntity = world.entity((std::string(rootNodeEntityPrefab.name().c_str()) + "_Instance_of_" + name).c_str());
-        rootNodeEntity.is_a(rootNodeEntityPrefab);
+        flecs::entity rootNodeEntity = world.entity((name + "_RootNode").c_str());
+        rootNodeEntity.add(world.lookup("IsNodeOf"), instanceEntity);
         rootNodeEntity.add(world.lookup("IsRootNodeOf"), animationInstanceEntity);
-        Rx::Component::NodeChildren rootNodeChildren;
-        rootNodeChildren.numberChildren = skeleton.nodes[0].numberChildren;
-        rootNodeEntity.set<Rx::Component::NodeChildren>(rootNodeChildren);
+        rootNodeEntity.add<Rx::Component::Transform>();
+        rootNodeEntity.set<Rx::Component::NodeIndex>({0});
 
-        std::vector<flecs::entity> nodeInstanceEntities;
-        nodeInstanceEntities.push_back(rootNodeEntity);
-
+        uint32_t nodeIndex = 0;
         for (int j = 0; j < skeleton.nodes[0].numberChildren; j++) {
-            createNodeInstanceEntities(world, name, skeleton, nodeInstanceEntities, rootNodeEntity);
+            createNodeInstanceEntities(world, name, nodeIndex, skeleton, rootNodeEntity, instanceEntity);
         }
-
-        instanceEntity.set<Rx::Component::SkeletonInstance>({nodeInstanceEntities});
 
         return instanceEntity;
     }
