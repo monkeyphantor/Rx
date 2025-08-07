@@ -31,30 +31,64 @@ namespace Component {
         float animationTime2 = 0.0f;
     };
 
+
+
     struct UpdateVisitor{
         SkeletonBuffer& skeletonBuffer;
-        const std::vector<Node>& nodes;
-        flecs::entity animationEntity;
+        const Skeleton& skeleton;
+       
+        void calculateBoneTransforms(const std::vector<AnimationBone>& animationBones, uint32_t& nodeIndex, float animationTime) {
+            std::vector<glm::mat4> transforms(skeleton.nodes.size(), glm::mat4(1.0f));
+            std::vector<glm::mat4> nodeTransforms(skeleton.nodes.size(), glm::mat4(1.0f));
 
-        void calculateBoneTransforms(const std::vector<AnimationBone>& animationBones, uint32_t& nodeIndex, float animationTime, glm::mat4 parentTransform) {
-            const Node& node = nodes[nodeIndex];
-            glm::mat4 nodeTransform;
-            if(node.isBone){
-                const AnimationBone& bone = animationBones[node.boneIndex];
-                auto [position, rotation, scaling] = bone.getLocalTransform(animationTime);
-                nodeTransform = parentTransform * glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scaling);
-                skeletonBuffer.transforms[nodeIndex].local = nodeTransform;
-                skeletonBuffer.transforms[nodeIndex].bone = nodeTransform * node.offset;
-            }else{
-                nodeTransform = parentTransform * node.offset;
-                skeletonBuffer.transforms[nodeIndex].local = nodeTransform;
-                skeletonBuffer.transforms[nodeIndex].bone = nodeTransform;
+            for(uint32_t i = 0; i < transforms.size(); i++){
+                const Node& node = skeleton.nodes[i];
+                if(node.isBone){
+                    const AnimationBone& bone = animationBones[node.boneIndex];
+                    auto [position, rotation, scaling] = bone.getLocalTransform(animationTime);
+                    transforms[i] = glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scaling);
+                }else{
+                    transforms[i] = node.offset;
+                }
             }
 
-            for(uint32_t i = 0; i < node.numberChildren; i++) {
-                calculateBoneTransforms(animationBones, ++nodeIndex, animationTime, nodeTransform);
+            nodeTransforms[0] = transforms[0];
+            for(uint32_t i = 1; i < transforms.size(); i++){
+                const int parentIndex = skeleton.nodes[i].parentIndex;
+                nodeTransforms[i] = nodeTransforms[parentIndex] * transforms[i];
+            }
+
+            for(uint32_t i = 0; i < nodeTransforms.size(); i++){
+                const Node& node = skeleton.nodes[i];
+                if(node.isBone){
+                    skeletonBuffer.transforms[i].local = nodeTransforms[i];
+                    skeletonBuffer.transforms[i].bone = nodeTransforms[i] * node.offset;
+                }else{
+                    skeletonBuffer.transforms[i].local = nodeTransforms[i];
+                    skeletonBuffer.transforms[i].bone = nodeTransforms[i];
+                }
             }
         }
+        
+        // void calculateBoneTransforms(const std::vector<AnimationBone>& animationBones, uint32_t& nodeIndex, float animationTime, glm::mat4 parentTransform) {
+        //     const Node& node = nodes[nodeIndex];
+        //     glm::mat4 nodeTransform;
+        //     if(node.isBone){
+        //         const AnimationBone& bone = animationBones[node.boneIndex];
+        //         auto [position, rotation, scaling] = bone.getLocalTransform(animationTime);
+        //         nodeTransform = parentTransform * glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scaling);
+        //         skeletonBuffer.transforms[nodeIndex].local = nodeTransform;
+        //         skeletonBuffer.transforms[nodeIndex].bone = nodeTransform * node.offset;
+        //     }else{
+        //         nodeTransform = parentTransform * node.offset;
+        //         skeletonBuffer.transforms[nodeIndex].local = nodeTransform;
+        //         skeletonBuffer.transforms[nodeIndex].bone = nodeTransform;
+        //     }
+
+        //     for(uint32_t i = 0; i < node.numberChildren; i++) {
+        //         calculateBoneTransforms(animationBones, ++nodeIndex, animationTime, nodeTransform);
+        //     }
+        // }
 
         // void calculateBoneTransforms(const SingleAnimation& animation, uint32_t& nodeIndex, glm::mat4 parentTransform) {
         //     glm::mat4 nodeTransform;
@@ -85,8 +119,8 @@ namespace Component {
 
         void operator()(SingleAnimation& state) {
             uint32_t nodeIndex = 0;
-            auto& animationBones = animationEntity.get<Rx::Component::AnimationClip>(state.animation).bones;
-            calculateBoneTransforms(animationBones, nodeIndex, state.animationTime, glm::mat4(1.f));
+            const auto& animationBones = skeleton.animationPrefab.get<Rx::Component::AnimationClip>(state.animation).bones;
+            calculateBoneTransforms(animationBones, nodeIndex, state.animationTime);
             state.animationTime += state.ticksPerSecond * state.animationSpeed * Time::deltaTime;
             state.animationTime = fmod(state.animationTime, state.duration);
         }
@@ -123,13 +157,8 @@ namespace Component {
             }
         }
 
-        void update(flecs::world& world, SkeletonBuffer& skeletonBuffer, const std::vector<Node>& nodes, flecs::entity instance){
-            flecs::entity animationEntity;
-            instance.children(world.lookup("IsAnimationOf"), [&](flecs::entity child) {
-                animationEntity = child;
-            });
-
-            std::visit(UpdateVisitor(skeletonBuffer, nodes, animationEntity), currentState);
+        void update(SkeletonBuffer& skeletonBuffer, const Skeleton& skeleton){
+            std::visit(UpdateVisitor(skeletonBuffer, skeleton), currentState);
         }
     };
 

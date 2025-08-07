@@ -29,7 +29,9 @@ namespace Rx{
 
         void GameWorldBase::loadGlobal() {
             world.set_ctx(this);
-
+            int thread_count = std::thread::hardware_concurrency() - 1;
+            world.set_threads(thread_count);
+            
             registerComponentsBase();
             registerObserversBase();
 
@@ -41,6 +43,7 @@ namespace Rx{
         };
 
     void GameWorldBase::registerComponentsBase() {
+        
             world.component<RenderRunning>();
             world.component<Rx::Component::Transform>();
 
@@ -503,11 +506,97 @@ namespace Rx{
                     }
                 });
 
+            world.system
+            <Rx::Component::AnimationStateMachine,
+            Rx::Component::Skeleton,
+            Rx::Component::SkeletonBuffer>
+            ("AnimationStateMachineUpdate")
+			.multi_threaded(true)
+            .kind(preRender)
+            .each([&](flecs::entity entity, Rx::Component::AnimationStateMachine& stateMachine, const Rx::Component::Skeleton& skeleton, Rx::Component::SkeletonBuffer& skeletonBuffer) {
+                    stateMachine.update(skeletonBuffer, skeleton);
+            });
 
              world.system("SkeletonModelUpdate")
+            .with<Rx::Component::Transform>()
+            .with<Rx::Component::SkeletonBuffer>()
+            .with(IsSkeletonModelInstanceOf, "$parent")
+            .with<ShouldBeUpdated>().src("$parent") 
+            .group_by(IsSkeletonModelInstanceOf)
+            .kind(preRender)
+            .run([&](flecs::iter& it) {
+                    uint64_t group_id = 0;
+                    uint32_t instanceIndex = 0;
+
+                    flecs::entity parent;
+
+                    while(it.next()) {
+                         if(group_id != it.group_id()) {
+                            if(group_id != 0) {
+                                auto prev_parent = it.world().entity(group_id);
+                                prev_parent.get_mut<Rx::Component::VkTransformBuffer>().numberTransforms = instanceIndex;
+                                prev_parent.get_mut<Rx::Component::VkSkeletonArrayBuffer>().numberSkeletons = instanceIndex;
+                                auto& indirectBuffer = prev_parent.get_mut<Rx::Component::IndirectBuffer>();
+                                indirectBuffer.setInstanceCount(instanceIndex);
+                                prev_parent.get_mut<Rx::Component::VkIndirectBuffer>().copyFrom(indirectBuffer);
+                                std::cout << "Finalizing group: " << group_id << " with instance count: " << instanceIndex << std::endl;
+                            }
+                            group_id = it.group_id();
+                            instanceIndex = 0; 
+                         }
+
+                        parent = it.world().entity(it.group_id());
+
+                        RX_ASSERT(parent.is_alive(), "TextureModelUpdate", "System", "Parent entity is not alive");
+                        RX_ASSERT(parent.has<Rx::Component::VkTransformBuffer>(), "TextureModelUpdate", "System", "Parent entity does not have VkTransformBuffer component");
+                        RX_ASSERT(parent.has<Rx::Component::IndirectBuffer>(), "TextureModelUpdate", "System", "Parent entity does not have IndirectBuffer component");
+                        RX_ASSERT(parent.has<Rx::Component::VkIndirectBuffer>(), "TextureModelUpdate", "System", "Parent entity does not have VkIndirectBuffer component");
+
+
+                        auto& transformBuffer = parent.get_mut<Rx::Component::VkTransformBuffer>();
+                        auto& vkSkeletonArrayBuffer = parent.get_mut<Rx::Component::VkSkeletonArrayBuffer>();
+
+                        uint32_t transformCapacity = vkSkeletonArrayBuffer.maxNumberSkeletons;
+
+                        Rx::Component::TransformInstance* transformInstances = (Rx::Component::TransformInstance*) transformBuffer.buffer.pMemory;
+                        Component::NodeTransform* pTransforms = static_cast<Component::NodeTransform*>(vkSkeletonArrayBuffer.buffer.pMemory);
+
+
+                        const auto& transforms = it.field<const Rx::Component::Transform>(0);
+                        auto skeletonBuffers = it.field<Rx::Component::SkeletonBuffer>(1);
+
+                        for (auto i : it) {
+                            if (instanceIndex >= transformCapacity) {
+                                std::cerr << "Error: buffer overflow for parent "
+                                        << parent.name() << "!\n";
+                                RX_LOGE("SkeletonModelUpdate", "System", ("Buffer overflow for parent: " + std::string(parent.name())).c_str());
+                            }
+
+                            auto transform = transforms[i].getTransformMatrix();
+                            transformInstances[instanceIndex].transform = transform;
+                            transformInstances[instanceIndex].normalTransform = glm::transpose(glm::inverse(transform));
+
+                            std::memcpy(pTransforms + instanceIndex * 256, skeletonBuffers[i].transforms.data(), skeletonBuffers[i].transforms.size() * sizeof(Component::NodeTransform));
+                
+                            instanceIndex++;
+                        }
+                    }
+
+                    if(group_id != 0) {
+                        // Finalize the previous group before starting a new one
+                        auto prev_parent = it.world().entity(group_id);
+                        prev_parent.get_mut<Rx::Component::VkTransformBuffer>().numberTransforms = instanceIndex;
+                        prev_parent.get_mut<Rx::Component::VkSkeletonArrayBuffer>().numberSkeletons = instanceIndex;
+                        auto& indirectBuffer = prev_parent.get_mut<Rx::Component::IndirectBuffer>();
+                        indirectBuffer.setInstanceCount(instanceIndex);
+                        prev_parent.get_mut<Rx::Component::VkIndirectBuffer>().copyFrom(indirectBuffer);
+                        std::cout << "Finalizing group: " << group_id << " with instance count: " << instanceIndex << std::endl;
+                    }
+                });
+
+
+                /*world.system("SkeletonModelTransformUpdate")
                 .with<Rx::Component::Transform>()
-                .with<Rx::Component::AnimationStateMachine>()
-                .with<Rx::Component::SkeletonBuffer>()
                 .with(IsSkeletonModelInstanceOf, "$parent")
                 .with<ShouldBeUpdated>().src("$parent") 
                 .group_by(IsSkeletonModelInstanceOf)
@@ -524,10 +613,6 @@ namespace Rx{
                                 // Finalize the previous group before starting a new one
                                 auto prev_parent = it.world().entity(group_id);
                                 prev_parent.get_mut<Rx::Component::VkTransformBuffer>().numberTransforms = instanceIndex;
-                                prev_parent.get_mut<Rx::Component::VkSkeletonArrayBuffer>().numberSkeletons = instanceIndex;
-                                auto& indirectBuffer = prev_parent.get_mut<Rx::Component::IndirectBuffer>();
-                                indirectBuffer.setInstanceCount(instanceIndex);
-                                prev_parent.get_mut<Rx::Component::VkIndirectBuffer>().copyFrom(indirectBuffer);
                             }
                             group_id = it.group_id();
                             instanceIndex = 0; 
@@ -536,25 +621,17 @@ namespace Rx{
                         parent = it.world().entity(it.group_id());
 
                         RX_ASSERT(parent.is_alive(), "TextureModelUpdate", "System", "Parent entity is not alive");
-                        RX_ASSERT(parent.has<Rx::Component::IndirectBuffer>(), "TextureModelUpdate", "System", "Parent entity does not have IndirectBuffer component");
-                        RX_ASSERT(parent.has<Rx::Component::VkIndirectBuffer>(), "TextureModelUpdate", "System", "Parent entity does not have VkIndirectBuffer component");
                         RX_ASSERT(parent.has<Rx::Component::VkTransformBuffer>(), "TextureModelUpdate", "System", "Parent entity does not have VkTransformBuffer component");
 
 
-                        auto& indirectBuffer = parent.get_mut<Rx::Component::IndirectBuffer>();
-                        auto& vkIndirectBuffer = parent.get_mut<Rx::Component::VkIndirectBuffer>();
                         auto& transformBuffer = parent.get_mut<Rx::Component::VkTransformBuffer>();
-                        auto& vkSkeletonArrayBuffer = parent.get_mut<Rx::Component::VkSkeletonArrayBuffer>();
-                        auto& skeleton = parent.get<Rx::Component::Skeleton>();
-
+            
                         Rx::Component::TransformInstance* transformInstances = (Rx::Component::TransformInstance*) transformBuffer.buffer.pMemory;
                         size_t transformCapacity = transformBuffer.maxNumberTransforms;
 
 
                         const auto& transforms = it.field<const Rx::Component::Transform>(0);
-                        auto animationStateMachines = it.field<Rx::Component::AnimationStateMachine>(1);
-                        auto skeletonBuffers = it.field<Rx::Component::SkeletonBuffer>(2);
-
+                        
                         for (auto i : it) {
                             if (instanceIndex >= transformCapacity) {
                                 std::cerr << "Error: buffer overflow for parent "
@@ -566,10 +643,6 @@ namespace Rx{
                             transformInstances[instanceIndex].transform = transform;
                             transformInstances[instanceIndex].normalTransform = glm::transpose(glm::inverse(transform));
 
-                            auto entity = it.entity(i);
-                            animationStateMachines[i].update(world, skeletonBuffers[i], skeleton.nodes, entity);
-                            skeletonBuffers[i].toVkSkeletonArrayBuffer(vkSkeletonArrayBuffer, instanceIndex);
-
                             instanceIndex++;
                         }
                     }
@@ -578,18 +651,16 @@ namespace Rx{
                         // Finalize the previous group before starting a new one
                         auto prev_parent = it.world().entity(group_id);
                         prev_parent.get_mut<Rx::Component::VkTransformBuffer>().numberTransforms = instanceIndex;
-                        prev_parent.get_mut<Rx::Component::VkSkeletonArrayBuffer>().numberSkeletons = instanceIndex;
-                        auto& indirectBuffer = prev_parent.get_mut<Rx::Component::IndirectBuffer>();
-                        indirectBuffer.setInstanceCount(instanceIndex);
-                        prev_parent.get_mut<Rx::Component::VkIndirectBuffer>().copyFrom(indirectBuffer);
                     }
-                });
+                });*/
 
-            world.system("SkeletonModelBoneTransformUpdate")
+            /*world.system("SkeletonModelBoneTransformUpdate")
             .with<Rx::Component::Transform>()
             .with<Rx::Component::NodeIndex>()
             .with(IsNodeOf, "$parent")
             .group_by(IsNodeOf)
+            .with<Rx::Component::SkeletonBuffer>().src("$parent")
+            .with<Rx::Component::Transform>().src("$parent")
             .kind(preRender)
             .run([&](flecs::iter& it) {
                     uint64_t group_id = 0;
@@ -610,14 +681,64 @@ namespace Rx{
                             transform = parent.get<Rx::Component::Transform>().getTransformMatrix();
                         }
 
-                        auto transforms = it.field<const Rx::Component::Transform>(0);
+                        auto transforms = it.field<Rx::Component::Transform>(0);
                         auto nodeIndices = it.field<const Rx::Component::NodeIndex>(1);
 
                         for (auto i : it) {
                             transforms[i].fromGlmMat4(transform * pSkeletonBuffer->transforms[nodeIndices[i].index].local);
                         }
                     }
+                  
             });
+
+            flecs::entity IsNodeOfSkeletonChild;
+            struct SkeletonIndex{
+                uint32_t index;
+            };
+            struct SkeletonIndexBuffer{
+                std::vector<uint32_t> indices;
+            };
+            world.system("SkeletonModelNodeTransformUpdate")
+            .with<Rx::Component::Transform>()
+            .with<Rx::Component::NodeIndex>()
+            .with<SkeletonIndex>()
+            .with(IsNodeOfSkeletonChild, "$parent")
+            .group_by(IsNodeOfSkeletonChild)
+            .with<Rx::Component::VkSkeletonArrayBuffer>().src("$parent")
+            .with<Rx::Component::VkTransformBuffer>().src("$parent")
+            .with<SkeletonIndexBuffer>().src("$parent")
+            .kind(preRender)
+            .run([&](flecs::iter& it) {
+                    uint64_t group_id = 0;
+                    uint32_t instanceIndex = 0;
+
+                    flecs::entity parent;
+                    const Component::NodeTransform* pSkeletonArrayBuffer;
+                    const Component::TransformInstance* pTransformBuffer;
+                    const uint32_t* pSkeletonIndexBuffer;
+                    glm::mat4 transform;
+
+                    while(it.next()) {
+                        if(group_id != it.group_id()) {
+                            group_id = it.group_id();
+                            parent = it.world().entity(it.group_id());
+                            RX_ASSERT(parent.is_alive(), "SkeletonModelBoneTransformUpdate", "System", "Parent entity is not alive");
+                            RX_ASSERT(parent.has<Rx::Component::VkSkeletonArrayBuffer>(), "SkeletonModelBoneTransformUpdate", "System", "Parent entity does not have VkSkeletonArrayBuffer component");
+                            pSkeletonArrayBuffer = (Component::NodeTransform*) parent.get<Rx::Component::VkSkeletonArrayBuffer>().buffer.pMemory;
+                            pTransformBuffer = (Component::TransformInstance*) parent.get<Rx::Component::VkTransformBuffer>().buffer.pMemory;
+                            pSkeletonIndexBuffer = parent.get<SkeletonIndexBuffer>().indices.data();
+                        }
+
+                        auto transforms = it.field<Rx::Component::Transform>(0);
+                        auto nodeIndices = it.field<const Rx::Component::NodeIndex>(1);
+                        auto skeletonIndices = it.field<const SkeletonIndex>(2);
+
+                        for (auto i : it) {
+                            uint32_t skeletonIndex = pSkeletonIndexBuffer[skeletonIndices[i].index];
+                            transforms[i].fromGlmMat4(pTransformBuffer[skeletonIndex].transform * pSkeletonArrayBuffer[skeletonIndex * 256 + nodeIndices[i].index].local);
+                        }
+                    }
+            });*/
 
             world.system()
             .kind(onRenderBegin)
@@ -870,6 +991,7 @@ namespace Rx{
                 }
             });
             
+
         }
 
 }

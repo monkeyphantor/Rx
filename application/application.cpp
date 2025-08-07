@@ -22,7 +22,7 @@ namespace Rx{
             std::cout << "--- Application starting ---" << std::endl;
 
             while (Rx::Core::updateCore() && state != State::QUITTING) {
-                if(1.f/Rx::Time::deltaTime < 100.f) {
+                if(1.f/Rx::Time::deltaTime < 300.f) {
                     std::cout << "Framerate: " << 1.f/Rx::Time::deltaTime << std::endl;
                 }
                 Rx::Core::getSwapchainImageIndex();
@@ -66,7 +66,7 @@ namespace Rx{
         void Application::runGame() {
             // Progress the main game world.
             gameWorld->getWorld().progress();
-
+                
             if(gameWorld->getShouldQuit()) {
                 std::cout << "[Game World] Quit requested. Exiting main loop." << std::endl;
                 state = State::QUITTING;

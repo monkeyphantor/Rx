@@ -10,6 +10,7 @@ namespace Rx {
             int numberChildren;
             int nodeIndex;
             int boneIndex;
+            int parentIndex;
         };
 
         struct NodeIndex {

@@ -53,41 +53,13 @@ namespace Rx
                 nodeIndexCounter++;
             }
 
-            for (int i = 0; i < 32; ++i) {
-                node.children[i] = -1;
-            }
-
-            nodes.push_back(node);
-
-            if (parentNodeIndex != -1) {
-                int i = 0;
-                while (i < 32 && nodes[parentNodeIndex].children[i] != -1) {
-                    ++i;
-                }
-                if (i < 32) {
-                    nodes[parentNodeIndex].children[i] = nodes.size()-1;
-                } else {
-                    RX_LOGE("ProcessNode", "Parent bone has more than 32 children: ", nodeName.c_str())
-                }
-            }
-
             int currentIndex = nodes.size()-1;
             for (unsigned int i = 0; i < assimpNode->mNumChildren; ++i) {
                 processNode(assimpNode->mChildren[i], nodes, boneIndexCounter, nodeIndexCounter, boneMapping, nodeMapping, boneOffsetMap, currentIndex);
             }
         }
 
-        void countChildren(std::vector<Component::Node>& nodes) {
-
-            for(int i = 0; i < nodes.size(); i++){
-                int count = 0;
-                for (int j = 0; nodes[i].children[j] != -1 && j < 32; ++j) {
-                    ++count;
-                }
-                nodes[i].numberChildren = count;
-            }
-        }
-
+      
 
         aiNode* findMeshParentNode(aiNode* node, int meshIndex) {
             for (int i = 0; i < node->mNumMeshes; i++) {
@@ -211,7 +183,6 @@ namespace Rx
             int boneIndexCounter = 0;
             int nodeIndexCounter = 0;
             processNode(scene->mRootNode, nodes, boneIndexCounter, nodeIndexCounter, boneMapping, nodeMapping, boneOffsetMap, -1);
-            countChildren(nodes);
             header.numberNodes = nodes.size();
             header.numberBones = boneIndexCounter;
 
@@ -479,7 +450,6 @@ namespace Rx
                 writeToData(data, &nodes[i].name[0], 128);
                 writeToData(data, &nodes[i].offset, 1);
                 writeToData(data, &nodes[i].numberChildren, 1);
-                writeToData(data, nodes[i].children, 32);
                 writeToData(data, &nodes[i].nodeIndex, 1);
                 writeToData(data, &nodes[i].boneIndex, 1);
             }

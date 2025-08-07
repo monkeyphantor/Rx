@@ -7,6 +7,18 @@ namespace Rx{
         void GameWorld::loadGlobal(){
             GameWorldBase::loadGlobal();
             registerComponents();
+
+           // world.import<flecs::stats>();
+
+            // flecs::Rest rest;
+            // rest.port = 27750;
+            // rest.ipaddr = (char*) malloc(10 * sizeof(char));
+            // strcpy(rest.ipaddr, "127.0.0.1");
+
+            // world.set<flecs::Rest>(rest);
+
+            //world.set<flecs::Rest>({});
+        
         };
 
 

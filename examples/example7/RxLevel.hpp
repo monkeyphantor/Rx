@@ -75,9 +75,13 @@ struct Actors{
         
         world.get_mut<Rx::Component::FlyingCamera>().speed = 100.f;
 
-        auto asset = Rx::Asset::loadSkeletonModel("C:/Users/robry/Desktop/3DModels/wizard.skelmod.rx", world, "SkeletonModelAsset", 1024);
+        auto asset = Rx::Asset::loadSkeletonModel("C:/Users/robry/Desktop/3DModels/wizard.skelmod.rx", world, "SkeletonModelAsset", 900);
 
-        auto animationPrefab = asset.get<Rx::Component::Skeleton>().animationPrefab;
+        flecs::entity skeleton;
+		asset.children(world.lookup("IsSkeletonOf"), [&](flecs::entity child) {
+			skeleton = child;
+		});
+        auto animationPrefab = skeleton.get<Rx::Component::Skeleton>().animationPrefab;
         auto& map = animationPrefab.get<Rx::Component::AnimationMap>().animations;
         auto& animClip = animationPrefab.get<Rx::Component::AnimationClip>(map.at("Run"));
         Rx::Component::AnimationStateMachine animStateMachine;
@@ -85,11 +89,14 @@ struct Actors{
         animStateMachine.setCurrentState("Run");
 
         float space = 4.f;
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 30; i++)
         {
-            for (int j = 0; j < 20; j++)
+            for (int j = 0; j < 30; j++)
             {
                 auto e = Rx::Asset::createSkeletonModelInstance(world, asset, "Wizard_" + std::to_string(i) + "_" + std::to_string(j));
+                if(!e.is_valid()) {
+                    RX_LOGE("Failed to create Wizard instance entity", std::to_string(i), std::to_string(j));
+                }
                 e.set<Rx::Component::Transform>({ glm::vec3(1.0f), 0.f * 3.14f/2.f, glm::vec3(1.f, 0.f, 0.f), glm::vec3(i * space, 0.f, j * space) });
                 e.set<Rx::Component::AnimationStateMachine>(animStateMachine);
                 e.add<LevelAsset>();

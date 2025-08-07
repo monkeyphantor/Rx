@@ -8,6 +8,7 @@
 #include "TransformInstance.hpp"
 #include "Material.hpp"
 #include "Transform.hpp"
+#include "NodeTransform.hpp"
 
 namespace Rx{
     namespace Component{
@@ -55,7 +56,7 @@ namespace Rx{
             bufferInfo[4].range = sizeof(TextureMaterial) * textureMaterialBuffer.maxNumberMaterials;
             bufferInfo[5].buffer = skeletonArrayBuffer.buffer.vkBuffer;
             bufferInfo[5].offset = 0;
-            bufferInfo[5].range = sizeof(glm::mat4) * skeletonArrayBuffer.maxNumberSkeletons * 256; // Assuming max 256 mat4 bones per skeleton
+            bufferInfo[5].range = sizeof(NodeTransform) * skeletonArrayBuffer.maxNumberSkeletons * 256; // Assuming max 256 mat4 bones per skeleton
 
             std::vector<VkDescriptorImageInfo> imageInfos(textureArray.textures.size());
             for (size_t i = 0; i < textureArray.textures.size(); i++) {

@@ -8,7 +8,7 @@ namespace Rx {
             // Create the transform buffer with the specified number of transforms
             transformBuffer.buffer = Core::createBufferInterface(
                 transformBuffer.maxNumberTransforms,
-                sizeof(TransformInstance), // Assuming TransformInstance is the type stored in the buffer
+                sizeof(TransformInstance), 
                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
             );
         }
