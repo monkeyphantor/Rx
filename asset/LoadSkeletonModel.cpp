@@ -37,11 +37,11 @@ namespace Asset{
     }
 
 
-     void createAnimationBones(flecs::world& world, const std::vector<Component::Node>& nodes, uint32_t& nodeIndex, uint32_t animationClipIndex, std::vector<Component::AnimationBone>& animationBones, std::vector<std::vector<std::vector<Component::PositionKey>>>& positionKeys, std::vector<std::vector<std::vector<Component::RotationKey>>>& rotationKeys, std::vector<std::vector<std::vector<Component::ScalingKey>>>& scalingKeys) {
+     void createAnimationBones(flecs::world& world, const std::vector<Component::Node>& nodes, const std::vector<Component::NodeName>& nodeNames, uint32_t& nodeIndex, uint32_t animationClipIndex, std::vector<Component::AnimationBone>& animationBones, std::vector<std::vector<std::vector<Component::PositionKey>>>& positionKeys, std::vector<std::vector<std::vector<Component::RotationKey>>>& rotationKeys, std::vector<std::vector<std::vector<Component::ScalingKey>>>& scalingKeys) {
 
             if(nodes[nodeIndex].isBone){
                 animationBones.push_back(std::move(Rx::Component::AnimationBone(
-                        nodes[nodeIndex].name,
+                        nodeNames[nodeIndex].name,
                         std::move(positionKeys[animationClipIndex][nodes[nodeIndex].boneIndex]),
                         std::move(rotationKeys[animationClipIndex][nodes[nodeIndex].boneIndex]),
                         std::move(scalingKeys[animationClipIndex][nodes[nodeIndex].boneIndex])
@@ -50,7 +50,7 @@ namespace Asset{
             
 			uint32_t currentNodeIndex = nodeIndex;
             for(int j = 0; j < nodes[currentNodeIndex].numberChildren; j++){
-                createAnimationBones(world, nodes, ++nodeIndex, animationClipIndex, animationBones, positionKeys, rotationKeys, scalingKeys);
+                createAnimationBones(world, nodes, nodeNames, ++nodeIndex, animationClipIndex, animationBones, positionKeys, rotationKeys, scalingKeys);
             }
         }
 
@@ -178,10 +178,11 @@ namespace Asset{
         }
 
         std::vector<Component::Node> nodes(header.numberNodes);
+        std::vector<Component::NodeName> nodeNames(header.numberNodes);
 
         for(uint32_t i = 0; i < nodes.size(); i++){
             loadData(data, nodes[i].isBone, offset);
-            loadString(data, nodes[i].name, 128, offset);
+            loadString(data, nodeNames[i].name, 128, offset);
             loadData(data, nodes[i].offset, offset);
             loadData(data, nodes[i].numberChildren, offset);
 			loadData(data, nodes[i].nodeIndex, offset);
@@ -273,7 +274,7 @@ namespace Asset{
             animationClip.durationInSeconds = animationHeaders[i].duration / animationHeaders[i].ticksPerSecond;
             std::vector<Component::AnimationBone> animationBones;
             uint32_t nodeIndex = 0;
-            createAnimationBones(world, nodes, nodeIndex, i, animationBones, positionKeys, rotationKeys, scalingKeys);
+            createAnimationBones(world, nodes, nodeNames, nodeIndex, i, animationBones, positionKeys, rotationKeys, scalingKeys);
             createKeyFrames(animationBones, animationClip.keyFrames, animationClip.keyFrameTimes, 0.1f);
             animationPrefab.set<Rx::Component::AnimationClip>(animationClipEntity, animationClip);
             animationClipEntities.push_back(animationClipEntity);
@@ -282,7 +283,7 @@ namespace Asset{
         animationPrefab.set<Rx::Component::AnimationMap>({map});
 
         flecs::entity skeletonPrefab = world.prefab((assetName + "_Skeleton").c_str());
-        skeletonPrefab.set<Rx::Component::Skeleton>({nodes, animationPrefab});
+        skeletonPrefab.set<Rx::Component::Skeleton>({nodes, nodeNames, animationPrefab});
         skeletonPrefab.add(world.lookup("IsSkeletonOf"), asset);
 
         return asset;
@@ -293,7 +294,7 @@ namespace Asset{
 
     void createNodeInstanceEntities(flecs::world& world, const std::string& skelInstanceName, uint32_t& nodeIndex, const Component::Skeleton& skeleton, const flecs::entity& parent, flecs::entity& instanceEntity) {
 
-        flecs::entity nodeInstanceEntity = world.entity((skelInstanceName + "_Node_" + skeleton.nodes[nodeIndex].name).c_str());
+        flecs::entity nodeInstanceEntity = world.entity((skelInstanceName + "_Node_" + skeleton.nodeNames[nodeIndex].name).c_str());
         nodeInstanceEntity.add(world.lookup("IsNodeOf"), instanceEntity);
         nodeInstanceEntity.add(world.lookup("IsChildNodeOf"), parent);
         nodeInstanceEntity.add<Rx::Component::Transform>();

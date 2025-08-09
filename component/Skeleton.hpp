@@ -8,6 +8,7 @@ namespace Rx {
 
         struct Skeleton{
             std::vector<Node> nodes;
+            std::vector<NodeName> nodeNames;
             flecs::entity animationPrefab;
         };
     }

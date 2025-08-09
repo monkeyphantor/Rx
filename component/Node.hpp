@@ -5,12 +5,15 @@ namespace Rx {
     namespace Component {
         struct Node {
             bool isBone;
-            char name[128];
             glm::mat4 offset;
             int numberChildren;
             int nodeIndex;
             int boneIndex;
             int parentIndex;
+        };
+
+        struct NodeName{
+            char name[128];
         };
 
         struct NodeIndex {

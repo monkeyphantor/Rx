@@ -23,6 +23,7 @@ namespace Rx
     {
         void processNode(const aiNode* assimpNode, 
             std::vector<Component::Node>& nodes,
+            std::vector<Component::NodeName>& nodeNames,
             int& boneIndexCounter, 
             int& nodeIndexCounter,
             std::map<std::string, int>& boneMapping,
@@ -31,11 +32,12 @@ namespace Rx
             int parentNodeIndex) 
         {
             Component::Node node;
+            Component::NodeName nodeNameComp;
             std::string nodeName(assimpNode->mName.C_Str());
             auto it = boneOffsetMap.find(nodeName);
             if (it != boneOffsetMap.end()) {
                 node.isBone = true;
-                strcpy(node.name, nodeName.c_str());
+                strcpy(nodeNameComp.name, nodeName.c_str());
                 node.offset = it->second;
                 boneMapping[nodeName] = boneIndexCounter;
                 node.boneIndex = boneIndexCounter;
@@ -45,7 +47,7 @@ namespace Rx
                 nodeIndexCounter++;
             }else{
                 node.isBone = false;
-                strcpy(node.name, nodeName.c_str());
+                strcpy(nodeNameComp.name, nodeName.c_str());
                 node.offset = AssimpGLMHelpers::convertToMat4(assimpNode->mTransformation);
                 node.boneIndex = -1;
                 nodeMapping[nodeName] = nodeIndexCounter;
@@ -54,11 +56,12 @@ namespace Rx
             }
 
             node.numberChildren = assimpNode->mNumChildren;
-            nodes.push_back(node);
+            nodes.push_back(std::move(node));
+            nodeNames.push_back(std::move(nodeNameComp));
 
             int currentIndex = nodes.size()-1;
             for (unsigned int i = 0; i < assimpNode->mNumChildren; ++i) {
-                processNode(assimpNode->mChildren[i], nodes, boneIndexCounter, nodeIndexCounter, boneMapping, nodeMapping, boneOffsetMap, currentIndex);
+                processNode(assimpNode->mChildren[i], nodes, nodeNames, boneIndexCounter, nodeIndexCounter, boneMapping, nodeMapping, boneOffsetMap, currentIndex);
             }
         }
 
@@ -95,6 +98,7 @@ namespace Rx
             std::vector<std::vector<Rx::Vertex::Skeleton>> vertexArrays;
             std::vector<std::vector<uint32_t>> indexArrays;
             std::vector<Component::Node> nodes;
+            std::vector<Component::NodeName> nodeNames;
             std::vector<Asset::AnimationHeader> animationHeaders;
             std::vector<std::vector<Asset::AnimationBoneHeader>> animationBoneHeaders;
             std::vector<std::vector<std::vector<Component::PositionKey>>> positionKeys;
@@ -185,7 +189,7 @@ namespace Rx
             std::map<std::string, int> nodeMapping;
             int boneIndexCounter = 0;
             int nodeIndexCounter = 0;
-            processNode(scene->mRootNode, nodes, boneIndexCounter, nodeIndexCounter, boneMapping, nodeMapping, boneOffsetMap, -1);
+            processNode(scene->mRootNode, nodes, nodeNames, boneIndexCounter, nodeIndexCounter, boneMapping, nodeMapping, boneOffsetMap, -1);
             header.numberNodes = nodes.size();
             header.numberBones = boneIndexCounter;
 
@@ -450,7 +454,7 @@ namespace Rx
 
             for(uint32_t i = 0; i < nodes.size(); i++){
                 writeToData(data, &nodes[i].isBone, 1);
-                writeToData(data, &nodes[i].name[0], 128);
+                writeToData(data, &nodeNames[i].name[0], 128);
                 writeToData(data, &nodes[i].offset, 1);
                 writeToData(data, &nodes[i].numberChildren, 1);
                 writeToData(data, &nodes[i].nodeIndex, 1);
