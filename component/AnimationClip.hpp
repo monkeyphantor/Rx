@@ -5,11 +5,18 @@
 namespace Rx {
 namespace Component {
 
+    struct KeyFrame{
+        glm::vec3 position;
+        glm::quat rotation;
+        glm::vec3 scaling;
+    };
+
     struct AnimationClip {
         float duration;
         float ticksPerSecond;
         float durationInSeconds;
-        std::vector<AnimationBone> bones;
+        std::vector<std::vector<KeyFrame>> keyFrames;
+        std::vector<float> keyFrameTimes;
     };
 
 }

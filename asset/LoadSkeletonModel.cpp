@@ -55,6 +55,42 @@ namespace Asset{
         }
 
 
+    void createKeyFrames(const std::vector<Component::AnimationBone>& animationBones, std::vector<std::vector<Component::KeyFrame>>& keyFrames, std::vector<float>& keyFrameTimes, float keyFrameDiff) {
+        
+        std::vector<float> allKeyFrameTimes;
+        for(uint32_t i = 0; i < animationBones.size(); i++){
+            auto keyFrameTimesBone = animationBones[i].getKeyFrameTimes();
+            allKeyFrameTimes.insert(allKeyFrameTimes.end(), keyFrameTimesBone.begin(), keyFrameTimesBone.end());
+        }
+
+        std::sort(allKeyFrameTimes.begin(), allKeyFrameTimes.end());
+
+        keyFrameTimes.push_back(allKeyFrameTimes[0]);
+        // Merge key frames that are too close together
+        // This is to avoid having too many key frames that are very close to each other
+
+        for (size_t i = 1; i < allKeyFrameTimes.size(); ++i) {
+            if (allKeyFrameTimes[i] - keyFrameTimes.back() >= keyFrameDiff) {
+                keyFrameTimes.push_back(allKeyFrameTimes[i]);
+            }
+        }
+
+        // Create KeyFrames for each key frame time
+        keyFrames.reserve(keyFrameTimes.size());
+        for(auto& keyFrameTime : keyFrameTimes){
+            std::vector<Component::KeyFrame> keyFramesSkeleton;
+            keyFramesSkeleton.reserve(animationBones.size());
+            for(auto& animationBone : animationBones){
+                auto [position, rotation, scaling] = animationBone.getLocalTransform(keyFrameTime);
+                keyFramesSkeleton.push_back(Component::KeyFrame{
+                    position,
+                    rotation,
+                    scaling
+                });
+            }
+            keyFrames.push_back(std::move(keyFramesSkeleton));
+        }
+    }
 
     flecs::entity /*assetEntity*/ loadSkeletonModel(const std::string& filePath, flecs::world& world, const std::string& assetName, const uint32_t maxNumberInstances) {
 
@@ -235,8 +271,10 @@ namespace Asset{
             animationClip.duration = animationHeaders[i].duration;
             animationClip.ticksPerSecond = animationHeaders[i].ticksPerSecond;
             animationClip.durationInSeconds = animationHeaders[i].duration / animationHeaders[i].ticksPerSecond;
+            std::vector<Component::AnimationBone> animationBones;
             uint32_t nodeIndex = 0;
-            createAnimationBones(world, nodes, nodeIndex, i, animationClip.bones, positionKeys, rotationKeys, scalingKeys);
+            createAnimationBones(world, nodes, nodeIndex, i, animationBones, positionKeys, rotationKeys, scalingKeys);
+            createKeyFrames(animationBones, animationClip.keyFrames, animationClip.keyFrameTimes, 0.1f);
             animationPrefab.set<Rx::Component::AnimationClip>(animationClipEntity, animationClip);
             animationClipEntities.push_back(animationClipEntity);
             map.animations[animationHeaders[i].name] = animationClipEntity;

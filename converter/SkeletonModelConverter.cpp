@@ -53,6 +53,9 @@ namespace Rx
                 nodeIndexCounter++;
             }
 
+            node.numberChildren = assimpNode->mNumChildren;
+            nodes.push_back(node);
+
             int currentIndex = nodes.size()-1;
             for (unsigned int i = 0; i < assimpNode->mNumChildren; ++i) {
                 processNode(assimpNode->mChildren[i], nodes, boneIndexCounter, nodeIndexCounter, boneMapping, nodeMapping, boneOffsetMap, currentIndex);

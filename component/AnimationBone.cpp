@@ -12,6 +12,20 @@ namespace Component {
         return {translation, rotation, scale};
     }
 
+    std::vector<float> AnimationBone::getKeyFrameTimes() const {
+        std::vector<float> keyFrameTimes;
+        for (const auto& position : positions) {
+            keyFrameTimes.push_back(position.time);
+        }
+        for (const auto& rotation : rotations) {
+            keyFrameTimes.push_back(rotation.time);
+        }
+        for (const auto& scaling : scalings) {
+            keyFrameTimes.push_back(scaling.time);
+        }
+        return keyFrameTimes;
+    }
+
     int AnimationBone::getPositionIndex(float animationTime) const
     {
         for (int index = 0; index < positions.size() - 1; ++index)

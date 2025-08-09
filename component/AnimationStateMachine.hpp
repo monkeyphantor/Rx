@@ -37,16 +37,15 @@ namespace Component {
         SkeletonBuffer& skeletonBuffer;
         const Skeleton& skeleton;
        
-        void calculateBoneTransforms(const std::vector<AnimationBone>& animationBones, uint32_t& nodeIndex, float animationTime) {
+        void calculateBoneTransforms(const std::vector<KeyFrame>& keyFrames) {
             std::vector<glm::mat4> transforms(skeleton.nodes.size(), glm::mat4(1.0f));
             std::vector<glm::mat4> nodeTransforms(skeleton.nodes.size(), glm::mat4(1.0f));
 
             for(uint32_t i = 0; i < transforms.size(); i++){
                 const Node& node = skeleton.nodes[i];
                 if(node.isBone){
-                    const AnimationBone& bone = animationBones[node.boneIndex];
-                    auto [position, rotation, scaling] = bone.getLocalTransform(animationTime);
-                    transforms[i] = glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scaling);
+                    const KeyFrame& keyFrame = keyFrames[node.boneIndex];
+                    transforms[i] = glm::translate(glm::mat4(1.0f), keyFrame.position) * glm::toMat4(keyFrame.rotation) * glm::scale(glm::mat4(1.0f), keyFrame.scaling);
                 }else{
                     transforms[i] = node.offset;
                 }
@@ -117,10 +116,53 @@ namespace Component {
         //     // });
         // }
 
+        uint32_t getUpperKeyFrameIndex(const std::vector<float>& keyFrameTimes, const float animationTime) {
+            uint32_t keyFrameIndex = 0;
+            for (uint32_t i = 0; i < keyFrameTimes.size(); i++) {
+                if (animationTime <= keyFrameTimes[i]) {
+                    keyFrameIndex = i;
+                    break;
+                }
+            }
+            return keyFrameIndex;
+        }
+
+        float getScaleFactor(const float lowerKeyFrameTime, const float upperKeyFrameTime, const float animationTime) {
+            float scaleFactor = 0.0f;
+            float midWayLength = animationTime - lowerKeyFrameTime;
+            float framesDiff = upperKeyFrameTime - lowerKeyFrameTime;
+            scaleFactor = midWayLength / framesDiff;
+            return scaleFactor;
+        }
+
+        std::vector<KeyFrame> interpolateKeyFrames(const std::vector<KeyFrame>& lowerKeyFrames, const std::vector<KeyFrame>& upperKeyFrames, float scaleFactor) {
+            std::vector<KeyFrame> interpolatedKeyFrames;
+            interpolatedKeyFrames.reserve(lowerKeyFrames.size());
+            for (size_t i = 0; i < lowerKeyFrames.size(); ++i) {
+                KeyFrame interpolatedKeyFrame;
+                interpolatedKeyFrame.position = glm::mix(lowerKeyFrames[i].position, upperKeyFrames[i].position, scaleFactor);
+                interpolatedKeyFrame.rotation = glm::slerp(lowerKeyFrames[i].rotation, upperKeyFrames[i].rotation, scaleFactor);
+                interpolatedKeyFrame.scaling = glm::mix(lowerKeyFrames[i].scaling, upperKeyFrames[i].scaling, scaleFactor);
+                interpolatedKeyFrames.push_back(interpolatedKeyFrame);
+            }
+            return interpolatedKeyFrames;
+        }
+
         void operator()(SingleAnimation& state) {
             uint32_t nodeIndex = 0;
-            const auto& animationBones = skeleton.animationPrefab.get<Rx::Component::AnimationClip>(state.animation).bones;
-            calculateBoneTransforms(animationBones, nodeIndex, state.animationTime);
+            const auto& animationPrefab = skeleton.animationPrefab.get<Rx::Component::AnimationClip>(state.animation);
+            const auto& keyFrameTimes = animationPrefab.keyFrameTimes;
+            uint32_t keyFrameIndex = getUpperKeyFrameIndex(keyFrameTimes, state.animationTime);
+            keyFrameIndex = keyFrameIndex * (keyFrameIndex > 0) + 1 * (keyFrameIndex == 0); // Ensure we have a valid index
+
+            const auto& upperKeyFrames = animationPrefab.keyFrames[keyFrameIndex];
+            const auto& lowerKeyFrames = animationPrefab.keyFrames[keyFrameIndex - 1];
+
+            float scaleFactor = getScaleFactor(keyFrameTimes[keyFrameIndex - 1], keyFrameTimes[keyFrameIndex], state.animationTime);
+            auto interpolatedKeyFrames = interpolateKeyFrames(lowerKeyFrames, upperKeyFrames, scaleFactor);
+
+            calculateBoneTransforms(interpolatedKeyFrames);
+            
             state.animationTime += state.ticksPerSecond * state.animationSpeed * Time::deltaTime;
             state.animationTime = fmod(state.animationTime, state.duration);
         }

@@ -27,6 +27,9 @@ public:
     std::vector<Component::ScalingKey> scalings;
 	
     std::tuple<glm::vec3, glm::quat, glm::vec3> getLocalTransform(float animationTime) const;
+
+    std::vector<float> getKeyFrameTimes() const;
+
     std::string getBoneName() const { return name; }	
 
     int getPositionIndex(float animationTime) const;
