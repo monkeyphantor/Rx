@@ -1,0 +1,81 @@
+#version 450
+layout(local_size_x = 1) in;
+
+struct KeyFrame {
+    vec4 position; // w unused
+    vec4 rotation; // quaternion (x,y,z,w)
+    vec4 scaling; // w unused
+};
+
+layout(std430, binding = 0) readonly buffer KeyFrameBuffer {
+    KeyFrame keyFrames[];
+};
+
+struct Node {
+    mat4 offset;
+    ivec4 meta; // parentIndex, isBone, boneIndex, padding
+};
+
+layout(std430, binding = 1) readonly buffer NodeBuffer {
+    Node nodes[];
+};
+
+struct TransformData {
+    mat4 local;
+    mat4 bone;
+};
+
+layout(std430, binding = 2) buffer TransformBuffer {
+    TransformData transforms[];
+};
+
+layout(push_constant) uniform PushConsts {
+    uint nodeCount;
+} pc;
+
+mat4 quatToMat4(vec4 q) {
+    float x = q.x, y = q.y, z = q.z, w = q.w;
+    float x2 = x + x; float y2 = y + y; float z2 = z + z;
+    float xx = x * x2; float xy = x * y2; float xz = x * z2;
+    float yy = y * y2; float yz = y * z2; float zz = z * z2;
+    float wx = w * x2; float wy = w * y2; float wz = w * z2;
+
+    mat4 m = mat4(1.0);
+    m[0][0] = 1.0 - (yy + zz);
+    m[0][1] = xy + wz;
+    m[0][2] = xz - wy;
+    m[1][0] = xy - wz;
+    m[1][1] = 1.0 - (xx + zz);
+    m[1][2] = yz + wx;
+    m[2][0] = xz + wy;
+    m[2][1] = yz - wx;
+    m[2][2] = 1.0 - (xx + yy);
+    return m;
+}
+
+mat4 compose(vec3 t, vec4 r, vec3 s) {
+    mat4 rot = quatToMat4(r);
+    rot[3] = vec4(t, 1.0);
+    rot[0] *= s.x;
+    rot[1] *= s.y;
+    rot[2] *= s.z;
+    return rot;
+}
+
+void main() {
+    for (uint i = 0; i < pc.nodeCount; ++i) {
+        Node node = nodes[i];
+        mat4 local;
+        if (node.meta.y == 1) {
+            KeyFrame k = keyFrames[node.meta.z];
+            local = compose(k.position.xyz, k.rotation, k.scaling.xyz);
+        } else {
+            local = node.offset;
+        }
+        mat4 parent = (i == 0) ? mat4(1.0) : transforms[node.meta.x].local;
+        mat4 global = parent * local;
+        transforms[i].local = global;
+        transforms[i].bone = (node.meta.y == 1) ? (global * node.offset) : global;
+    }
+}
+
