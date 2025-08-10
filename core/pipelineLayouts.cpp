@@ -14,10 +14,13 @@ namespace Rx
             createInstancedColorMeshPipelineLayout();
             createTextureModelPipelineLayout();
             createSkeletonModelPipelineLayout();
+            createSkeletonModelCompPipelineLayout();
         }
 
         void destroyPipelineLayouts()
         {
+            destroySkeletonModelCompPipelineLayout();
+
             destroySkeletonModelPipelineLayout();
             destroyTextureModelPipelineLayout();
             destroyInstancedColorMeshPipelineLayout();
@@ -151,6 +154,30 @@ namespace Rx
             skeletonModelPipelineLayout, 
             nullptr);
             );
+        }
+        void createSkeletonModelCompPipelineLayout(){
+            VkPipelineLayoutCreateInfo layoutInfo{};
+            layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            layoutInfo.setLayoutCount = 1;
+            layoutInfo.pSetLayouts = &skeletonModelCompDescriptorSetLayout;
+            RX_VK_MUTEX(
+            RX_CHECK_VULKAN(
+                vkCreatePipelineLayout(
+                    Core::vkDevice,
+                    &layoutInfo,
+                    nullptr,
+                    &skeletonModelCompPipelineLayout),
+                "createSkeletonModelCompPipelineLayout",
+                "vkCreatePipelineLayout"))
+        }
+
+        void destroySkeletonModelCompPipelineLayout(){
+            RX_VK_MUTEX(
+                vkDestroyPipelineLayout(
+                    Core::vkDevice,
+                    skeletonModelCompPipelineLayout,
+                    nullptr);
+            )
         }
     }
 } // namespace Rx::Core

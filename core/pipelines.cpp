@@ -17,11 +17,13 @@ namespace Rx
             createColorMeshArrayPipeline();
             createInstancedColorMeshPipeline();
             createTextureModelPipeline();
+            createSkeletonModelCompPipeline();
             createSkeletonModelPipeline();
         }
 
         void destroyPipelines()
         {
+            destroySkeletonModelCompPipeline();
             destroySkeletonModelPipeline();
             destroyTextureModelPipeline();
             destroyInstancedColorMeshPipeline();
@@ -896,6 +898,38 @@ namespace Rx
         void destroySkeletonModelPipeline(){
             RX_VK_MUTEX(
                 vkDestroyPipeline(vkDevice, skeletonModelPipeline, nullptr);
+            )
+        }
+        void createSkeletonModelCompPipeline(){
+            VkPipelineShaderStageCreateInfo stage{};
+            stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+            stage.module = keyframeToNodeShader.createShaderModule();
+            stage.pName = "main";
+
+            VkComputePipelineCreateInfo createInfo{};
+            createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+            createInfo.stage = stage;
+            createInfo.layout = skeletonModelCompPipelineLayout;
+
+            RX_VK_MUTEX(
+            RX_CHECK_VULKAN(
+                vkCreateComputePipelines(
+                    vkDevice,
+                    VK_NULL_HANDLE,
+                    1,
+                    &createInfo,
+                    nullptr,
+                    &skeletonModelCompPipeline),
+                "createSkeletonModelCompPipeline",
+                "vkCreateComputePipelines"))
+
+            vkDestroyShaderModule(vkDevice, stage.module, nullptr);
+        }
+
+        void destroySkeletonModelCompPipeline(){
+            RX_VK_MUTEX(
+                vkDestroyPipeline(vkDevice, skeletonModelCompPipeline, nullptr);
             )
         }
     }

@@ -13,10 +13,12 @@ namespace Rx
             createInstancedColorMeshDescriptorSetLayout();
             createTextureModelDescriptorSetLayout();
             createSkeletonModelDescriptorSetLayout();
+            createSkeletonModelCompDescriptorSetLayout();
         }
 
         void destroyDescriptorSetLayouts()
         {
+            destroySkeletonModelCompDescriptorSetLayout();
             destroySkeletonModelDescriptorSetLayout();
             destroyTextureModelDescriptorSetLayout();
             destroyInstancedColorMeshDescriptorSetLayout();
@@ -294,5 +296,37 @@ namespace Rx
             nullptr);)
         }
 
+        void createSkeletonModelCompDescriptorSetLayout(){
+            std::vector<VkDescriptorSetLayoutBinding> bindings(3);
+            for(uint32_t i=0;i<3;i++){
+                bindings[i].binding = i;
+                bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                bindings[i].descriptorCount = 1;
+                bindings[i].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+                bindings[i].pImmutableSamplers = nullptr;
+            }
+            VkDescriptorSetLayoutCreateInfo layoutInfo{};
+            layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+            layoutInfo.pBindings = bindings.data();
+            RX_VK_MUTEX(
+            RX_CHECK_VULKAN(
+                vkCreateDescriptorSetLayout(
+                    vkDevice,
+                    &layoutInfo,
+                    nullptr,
+                    &skeletonModelCompDescriptorSetLayout),
+                "createSkeletonModelCompDescriptorSetLayout",
+                "vkCreateDescriptorSetLayout"))
+        }
+
+        void destroySkeletonModelCompDescriptorSetLayout(){
+            RX_VK_MUTEX(
+                vkDestroyDescriptorSetLayout(
+                    vkDevice,
+                    skeletonModelCompDescriptorSetLayout,
+                    nullptr);
+            )
+        }
     }
 } // namespace Rx::Core

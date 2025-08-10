@@ -1,6 +1,7 @@
 #pragma once
 
 #include "global.hpp"
+#include <cstddef>
 
 namespace Rx
 {
@@ -10,6 +11,7 @@ namespace Rx
         {
         public:
             Shader(std::string filePath);
+            Shader(const unsigned char* codeData, size_t codeSize);
             ~Shader()  = default;
 
         private:
@@ -34,5 +36,7 @@ namespace Rx
         inline Shader skeletonModelVertexShader{"shader/SkeletonModelShader.vert.spv"};
         inline Shader skeletonModelFragmentShader{"shader/SkeletonModelShader.frag.spv"};
 
+#include "../shader/KeyframeToNode.comp.spv.h"
+        inline Shader keyframeToNodeShader{shader_KeyframeToNode_comp_spv, shader_KeyframeToNode_comp_spv_len};
     }
 }

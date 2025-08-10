@@ -22,6 +22,12 @@ namespace Rx
             file.read(code.data(), fileSize);
             file.close();
         }
+
+        Shader::Shader(const unsigned char* codeData, size_t codeSize)
+        {
+            code.assign(reinterpret_cast<const char*>(codeData),
+                        reinterpret_cast<const char*>(codeData) + codeSize);
+        }
         
         VkShaderModule Shader::createShaderModule()
         {

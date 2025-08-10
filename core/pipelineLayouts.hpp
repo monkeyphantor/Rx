@@ -5,7 +5,7 @@ namespace Rx
 {
     namespace Core
     {
- 
+
         void createPipelineLayouts();
         void destroyPipelineLayouts();
 
@@ -28,5 +28,9 @@ namespace Rx
         inline VkPipelineLayout skeletonModelPipelineLayout;
         void createSkeletonModelPipelineLayout();
         void destroySkeletonModelPipelineLayout();
+
+        inline VkPipelineLayout skeletonModelCompPipelineLayout;
+        void createSkeletonModelCompPipelineLayout();
+        void destroySkeletonModelCompPipelineLayout();
     }
 }
