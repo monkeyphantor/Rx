@@ -24,7 +24,11 @@
 #include "NodeTransform.hpp"
 #include "VkSkeletonMeshArray.hpp"
 #include "VkSkeletonModelDescriptorSet.hpp"
-
+#include "VkSkeleton.hpp"
+#include "VkKeyFrameArrayBuffer.hpp"
+#include "VkSkeletonModelCompDescriptorSet.hpp"
+#include "KeyFrameBuffer.hpp"
+#include "Skeleton.hpp"
 namespace Rx{
 
         void GameWorldBase::loadGlobal() {
@@ -198,6 +202,34 @@ namespace Rx{
             world.observer<Rx::Component::VkSkeletonModelDescriptorSet>()
             .event(flecs::OnRemove)
             .each(Rx::Component::vkSkeletonModelDescriptorSet_component_on_remove);
+
+            world.observer<Rx::Component::Skeleton>()
+            .event(flecs::OnSet)
+            .each(Rx::Component::skeleton_on_component_set);
+
+            world.observer<Rx::Component::Skeleton, Rx::Component::VkSkeleton>()
+            .event(flecs::OnAdd)
+            .each(Rx::Component::vkSkeleton_component_on_add);
+
+            world.observer<Rx::Component::VkSkeleton>()
+            .event(flecs::OnRemove)
+            .each(Rx::Component::vkSkeleton_component_on_remove);
+
+            world.observer<Rx::Component::VkKeyFrameArrayBuffer>()
+            .event(flecs::OnSet)
+            .each(Rx::Component::vkKeyFrameArrayBuffer_component_on_set);
+
+            world.observer<Rx::Component::VkKeyFrameArrayBuffer>()
+            .event(flecs::OnRemove)
+            .each(Rx::Component::vkKeyFrameArrayBuffer_component_on_remove);
+
+            world.observer<Rx::Component::VkSkeleton, Rx::Component::VkKeyFrameArrayBuffer, Rx::Component::VkSkeletonArrayBuffer, Rx::Component::VkSkeletonModelCompDescriptorSet>()
+            .event(flecs::OnAdd)
+            .each(Rx::Component::vkSkeletonModelCompDescriptorSet_component_on_add);
+
+            world.observer<Rx::Component::VkSkeletonModelCompDescriptorSet>()
+            .event(flecs::OnRemove)
+            .each(Rx::Component::vkSkeletonModelCompDescriptorSet_component_on_remove);
         }
 
         void GameWorldBase::registerGraphicsBase(){
@@ -208,12 +240,20 @@ namespace Rx{
             postUpdate.depends_on(flecs::OnUpdate);
             preRender = world.entity("PreRender");
             preRender.depends_on(postUpdate);
-            onRenderBegin = world.entity("OnRenderBegin");
-            onRenderBegin.depends_on(preRender);
-            onRender = world.entity("OnRender");
-            onRender.depends_on(onRenderBegin);
-            onRenderEnd = world.entity("OnRenderEnd");
-            onRenderEnd.depends_on(onRender);
+            onRecordBegin = world.entity("OnRecordBegin");
+            onRecordBegin.depends_on(preRender);
+            onRecordBarrier1 = world.entity("OnRecordBarrier1");
+            onRecordBarrier1.depends_on(onRecordBegin);
+            onRecordComp = world.entity("OnRecordComp");
+            onRecordComp.depends_on(onRecordBarrier1);
+            onRecordBarrier2 = world.entity("OnRecordBarrier2");
+            onRecordBarrier2.depends_on(onRecordComp);
+            onRecordRenderPassBegin = world.entity("OnRecordRenderPassBegin");
+            onRecordRenderPassBegin.depends_on(onRecordBarrier2);
+            onRecordRender = world.entity("OnRecordRender");
+            onRecordRender.depends_on(onRecordRenderPassBegin);
+            onRecordEnd = world.entity("OnRecordEnd");
+            onRecordEnd.depends_on(onRecordRender);
 
             colorMeshArrayInstanceRelation = world.entity("ColorMeshArrayInstanceRelation");
             instancedColorMeshRelation = world.entity("InstancedColorMeshRelation");
@@ -508,18 +548,17 @@ namespace Rx{
 
             world.system
             <Rx::Component::AnimationStateMachine,
-            Rx::Component::Skeleton,
-            Rx::Component::SkeletonBuffer>
+            Rx::Component::KeyFrameBuffer>
             ("AnimationStateMachineUpdate")
 			.multi_threaded(true)
             .kind(preRender)
-            .each([&](flecs::entity entity, Rx::Component::AnimationStateMachine& stateMachine, const Rx::Component::Skeleton& skeleton, Rx::Component::SkeletonBuffer& skeletonBuffer) {
-                    stateMachine.update(skeletonBuffer, skeleton);
+            .each([&](flecs::entity entity, Rx::Component::AnimationStateMachine& stateMachine, Rx::Component::KeyFrameBuffer& keyFrameBuffer) {
+                    stateMachine.update(entity, keyFrameBuffer);
             });
 
              world.system("SkeletonModelUpdate")
             .with<Rx::Component::Transform>()
-            .with<Rx::Component::SkeletonBuffer>()
+            .with<Rx::Component::KeyFrameBuffer>()
             .with(IsSkeletonModelInstanceOf, "$parent")
             .with<ShouldBeUpdated>().src("$parent") 
             .group_by(IsSkeletonModelInstanceOf)
@@ -554,21 +593,22 @@ namespace Rx{
 
 
                         auto& transformBuffer = parent.get_mut<Rx::Component::VkTransformBuffer>();
-                        auto& vkSkeletonArrayBuffer = parent.get_mut<Rx::Component::VkSkeletonArrayBuffer>();
+                        auto& vkKeyFrameArrayBuffer = parent.get_mut<Rx::Component::VkKeyFrameArrayBuffer>();
 
-                        uint32_t transformCapacity = vkSkeletonArrayBuffer.maxNumberSkeletons;
+                        uint32_t transformCapacity =  transformBuffer.maxNumberTransforms;
 
                         Rx::Component::TransformInstance* transformInstances = (Rx::Component::TransformInstance*) transformBuffer.buffer.pMemory;
-                        Component::NodeTransform* pTransforms = static_cast<Component::NodeTransform*>(vkSkeletonArrayBuffer.buffer.pMemory);
+                        Component::VkKeyFrame* pKeyFrames = static_cast<Component::VkKeyFrame*>(vkKeyFrameArrayBuffer.buffer.pMemory);
 
 
                         const auto& transforms = it.field<const Rx::Component::Transform>(0);
-                        auto skeletonBuffers = it.field<Rx::Component::SkeletonBuffer>(1);
+                        auto keyFrameBuffers = it.field<Rx::Component::KeyFrameBuffer>(1);
 
                         for (auto i : it) {
                             if (instanceIndex >= transformCapacity) {
                                 std::cerr << "Error: buffer overflow for parent "
                                         << parent.name() << "!\n";
+								std::cout << "Instance Index: " << instanceIndex << ", Transform Capacity: " << transformCapacity << std::endl;
                                 RX_LOGE("SkeletonModelUpdate", "System", ("Buffer overflow for parent: " + std::string(parent.name())).c_str());
                             }
 
@@ -576,8 +616,8 @@ namespace Rx{
                             transformInstances[instanceIndex].transform = transform;
                             transformInstances[instanceIndex].normalTransform = glm::transpose(glm::inverse(transform));
 
-                            std::memcpy(pTransforms + instanceIndex * 256, skeletonBuffers[i].transforms.data(), skeletonBuffers[i].transforms.size() * sizeof(Component::NodeTransform));
-                
+                            std::memcpy(pKeyFrames + instanceIndex * 256, keyFrameBuffers[i].keyFrames.data(), keyFrameBuffers[i].keyFrames.size() * sizeof(Component::VkKeyFrame));
+
                             instanceIndex++;
                         }
                     }
@@ -741,18 +781,137 @@ namespace Rx{
             });*/
 
             world.system()
-            .kind(onRenderBegin)
+            .kind(onRecordBegin)
             .with<RenderRunning>().src(game)
             .run([](flecs::iter& it) {
                  while(it.next()) {
                      Rx::Core::vulkanCommandMutex.lock();
                      Rx::Core::beginCommand(Rx::Core::command[Rx::Core::commandIndex]);
-                     Rx::Core::beginRenderPass(Rx::Core::command[Rx::Core::commandIndex]);
                  }
             });
 
+            world.system()
+            .kind(onRecordBarrier1)
+            .with<RenderRunning>().src(game)
+            .run([](flecs::iter& it) {
+                 while(it.next()) {
+                    VkMemoryBarrier memoryBarrier = {};
+                    memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+                    // Wait for the compute shader to finish writing to the buffer
+                    memoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+                    // Make the buffer readable by the vertex shader
+                    memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                    vkCmdPipelineBarrier(
+                        Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
+                        VK_PIPELINE_STAGE_HOST_BIT,
+                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                        0,
+                        1, &memoryBarrier,
+                        0, nullptr,
+                        0, nullptr
+                    );
+                }
+            });
+
+
+
+
+            world.system<const Rx::Component::Skeleton, const Rx::Component::VkSkeletonModelCompDescriptorSet, const Component::VkTransformBuffer>("SkeletonModelNodeCalculationSystem")
+            .kind(onRecordComp)
+            .with<RenderRunning>().src(game)
+            .run([](flecs::iter& it) {
+
+                vkCmdBindPipeline(
+                    Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
+                    VK_PIPELINE_BIND_POINT_COMPUTE,
+                    Rx::Core::skeletonModelCompPipeline
+                );
+
+                while (it.next()) {
+                    auto skeletons = it.field<const Rx::Component::Skeleton>(0);
+                    auto descriptorSets = it.field<const Rx::Component::VkSkeletonModelCompDescriptorSet>(1);
+                    auto transformBuffers = it.field<const Component::VkTransformBuffer>(2);
+
+                    for(auto i : it){
+                        const auto& skeleton = skeletons[i];
+                        const auto& descriptorSet = descriptorSets[i];
+                        const auto& transformBuffer = transformBuffers[i];
+
+                        vkCmdBindDescriptorSets(
+                            Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
+                            VK_PIPELINE_BIND_POINT_COMPUTE,
+                            Rx::Core::skeletonModelCompPipelineLayout,
+                            0, 1,
+                            &descriptorSet.vkDescriptorSet,
+                            0, nullptr
+                        );
+
+                        struct PushConstantData {
+                            int numberNodes;
+                        } pushConstants;
+
+                        pushConstants.numberNodes = skeleton.nodes.size();
+
+                        vkCmdPushConstants(
+                            Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
+                            Rx::Core::skeletonModelCompPipelineLayout,
+                            VK_SHADER_STAGE_COMPUTE_BIT,
+                            0,
+                            sizeof(PushConstantData),
+                            &pushConstants
+                        );
+
+                        // Dispatch one workgroup per skeleton instance
+                        vkCmdDispatch(
+                            Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
+                            transformBuffer.numberTransforms, // Group Count X
+                            1,                              // Group Count Y
+                            1                               // Group Count Z
+                        );
+                    }
+                }
+                
+
+            
+
+                
+            });
+
+            world.system()
+            .kind(onRecordBarrier2)
+            .run([](flecs::iter& it) {
+                while (it.next()) {
+
+                    VkMemoryBarrier memoryBarrier = {};
+                    memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+                    // Wait for the compute shader to finish writing to the buffer
+                    memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+                    // Make the buffer readable by the vertex shader
+                    memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                    vkCmdPipelineBarrier(
+                        Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
+                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,  // Source stage
+                        VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, // Destination stage
+                        0,
+                        1, &memoryBarrier,
+                        0, nullptr,
+                        0, nullptr
+                    );
+                }
+            });
+
+            world.system()
+            .kind(onRecordRenderPassBegin)
+            .run([](flecs::iter& it) {
+                while (it.next()) {
+                    Rx::Core::beginRenderPass(Rx::Core::command[Rx::Core::commandIndex]);
+                }
+            });
+
             world.system<Rx::Component::VkColorModelDescriptorSet, Rx::Component::VkColorModelBuffer, Rx::Component::VkColorMesh, Rx::Component::Material, Rx::Component::Transform>()
-            .kind(onRender)
+            .kind(onRecordRender)
            // .with<ShouldBeRendered>()
             .with<RenderRunning>().src(game)
             .run([](flecs::iter& it) {    
@@ -805,7 +964,7 @@ namespace Rx{
             });
             
             world.system<Rx::Component::ColorMeshArray, Rx::Component::VkIndirectBuffer, Rx::Component::ColorArrayGraphics>()
-            .kind(onRender)
+            .kind(onRecordRender)
             .with<RenderRunning>().src(game)
             .run([](flecs::iter& it) {
 
@@ -850,7 +1009,7 @@ namespace Rx{
             });
 
             world.system<Rx::Component::VkColorMesh, Rx::Component::VkInstancedColorModelBuffer,Rx::Component::VkInstancedColorModelDescriptorSet>()
-            .kind(onRender)
+            .kind(onRecordRender)
             .with<RenderRunning>().src(game)
             .run([](flecs::iter& it) {
                 vkCmdBindPipeline
@@ -893,9 +1052,12 @@ namespace Rx{
             });
 
             world.system<Rx::Component::VkTextureMeshArray, Rx::Component::VkTextureModelDescriptorSet, Rx::Component::VkIndirectBuffer>()
-            .kind(onRender)
+            .kind(onRecordRender)
             .with<RenderRunning>().src(game)
             .run([](flecs::iter& it) {
+
+                
+                
                 vkCmdBindPipeline
                 (Rx::Core::command[Rx::Core::commandIndex].vkCommandBuffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -933,10 +1095,11 @@ namespace Rx{
                         sizeof(VkDrawIndexedIndirectCommand));
                     }
                 }
-            });
+
+              });
 
             world.system<Rx::Component::VkSkeletonMeshArray,  Rx::Component::VkSkeletonModelDescriptorSet, Rx::Component::VkIndirectBuffer>()
-            .kind(onRender)
+            .kind(onRecordRender)
             .with<RenderRunning>().src(game)
             .run([](flecs::iter& it) {
                 vkCmdBindPipeline
@@ -979,7 +1142,7 @@ namespace Rx{
             });
 
             world.system()
-            .kind(onRenderEnd)
+            .kind(onRecordEnd)
             .with<RenderRunning>().src(game)
             .run([](flecs::iter& it) {
                 while(it.next()) {

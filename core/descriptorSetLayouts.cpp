@@ -13,10 +13,12 @@ namespace Rx
             createInstancedColorMeshDescriptorSetLayout();
             createTextureModelDescriptorSetLayout();
             createSkeletonModelDescriptorSetLayout();
+            createSkeletonModelCompDescriptorSetLayout();
         }
 
         void destroyDescriptorSetLayouts()
         {
+            destroySkeletonModelCompDescriptorSetLayout();
             destroySkeletonModelDescriptorSetLayout();
             destroyTextureModelDescriptorSetLayout();
             destroyInstancedColorMeshDescriptorSetLayout();
@@ -291,6 +293,49 @@ namespace Rx
             vkDestroyDescriptorSetLayout
             (vkDevice, 
             skeletonModelDescriptorSetLayout,
+            nullptr);)
+        }
+
+        void createSkeletonModelCompDescriptorSetLayout(){
+            std::vector<VkDescriptorSetLayoutBinding> bindings(3);
+            bindings[0].binding = 0;
+            bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            bindings[0].descriptorCount = 1;
+            bindings[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+            bindings[0].pImmutableSamplers = nullptr;
+            bindings[1].binding = 1;
+            bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            bindings[1].descriptorCount = 1;
+            bindings[1].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+            bindings[1].pImmutableSamplers = nullptr;
+            bindings[2].binding = 2;
+            bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            bindings[2].descriptorCount = 1;
+            bindings[2].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+            bindings[2].pImmutableSamplers = nullptr;
+
+            VkDescriptorSetLayoutCreateInfo layoutInfo{};
+            layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+            layoutInfo.pBindings = bindings.data();
+
+            RX_VK_MUTEX(
+            RX_CHECK_VULKAN
+            (vkCreateDescriptorSetLayout
+            (vkDevice, 
+            &layoutInfo, 
+            nullptr, 
+            &skeletonModelCompDescriptorSetLayout),
+            "createSkeletonModelCompDescriptorSetLayout", 
+            "vkCreateDescriptorSetLayout"))
+        
+        }
+
+        void destroySkeletonModelCompDescriptorSetLayout(){
+            RX_VK_MUTEX(
+            vkDestroyDescriptorSetLayout
+            (vkDevice, 
+            skeletonModelCompDescriptorSetLayout,
             nullptr);)
         }
 

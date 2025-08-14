@@ -18,10 +18,12 @@ namespace Rx
             createInstancedColorMeshPipeline();
             createTextureModelPipeline();
             createSkeletonModelPipeline();
+            createSkeletonModelCompPipeline();
         }
 
         void destroyPipelines()
         {
+            destroySkeletonModelCompPipeline();
             destroySkeletonModelPipeline();
             destroyTextureModelPipeline();
             destroyInstancedColorMeshPipeline();
@@ -898,5 +900,44 @@ namespace Rx
                 vkDestroyPipeline(vkDevice, skeletonModelPipeline, nullptr);
             )
         }
+
+        void createSkeletonModelCompPipeline(){
+            VkPipelineShaderStageCreateInfo stageCreateInfo{};
+            stageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            stageCreateInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+            stageCreateInfo.module = skeletonModelComputeShader.createShaderModule();
+            stageCreateInfo.pName = "main";
+
+            VkComputePipelineCreateInfo pipelineCreateInfo{};
+            pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+            pipelineCreateInfo.stage = stageCreateInfo;
+            pipelineCreateInfo.layout = skeletonModelCompPipelineLayout;
+            pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
+            pipelineCreateInfo.basePipelineIndex = -1;
+
+            RX_VK_MUTEX(
+            RX_CHECK_VULKAN(
+            vkCreateComputePipelines(
+                Core::vkDevice,
+                VK_NULL_HANDLE,
+                1,
+                &pipelineCreateInfo,
+                nullptr,
+                &skeletonModelCompPipeline),
+                "createSkeletonModelCompPipeline",
+                "vkCreateComputePipelines"
+            ));
+
+            RX_VK_MUTEX(
+                vkDestroyShaderModule(Core::vkDevice, stageCreateInfo.module, nullptr);
+            )
+        }
+
+        void destroySkeletonModelCompPipeline(){
+            RX_VK_MUTEX(
+                vkDestroyPipeline(Core::vkDevice, skeletonModelCompPipeline, nullptr);
+            )
+        }
+
     }
 } // namespace Rx::Core

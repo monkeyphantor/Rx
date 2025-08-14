@@ -33,5 +33,9 @@ namespace Rx
         void createSkeletonModelDescriptorSetLayout();
         void destroySkeletonModelDescriptorSetLayout();
         
+        inline VkDescriptorSetLayout skeletonModelCompDescriptorSetLayout;
+        void createSkeletonModelCompDescriptorSetLayout();
+        void destroySkeletonModelCompDescriptorSetLayout();
+        
     }
 }

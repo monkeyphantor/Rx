@@ -20,11 +20,18 @@
 #include "AnimationClip.hpp"
 #include "AnimationMap.hpp"
 #include "Skeleton.hpp"
+#include "VkSkeleton.hpp"
+#include "VkKeyFrameArrayBuffer.hpp"
+#include "KeyFrameBuffer.hpp"
+#include "VkSkeletonModelCompDescriptorSet.hpp"
 #include "SkeletonBuffer.hpp"
 #include "LocalTransform.hpp"
 #include "SkeletonInstance.hpp"
 #include "NodeChildren.hpp"
 #include "Transform.hpp"
+#include "SkeletonEntityArray.hpp"
+#include "SkeletonIndex.hpp"
+
 namespace Rx {
 
 namespace Asset{
@@ -282,27 +289,36 @@ namespace Asset{
         }
         animationPrefab.set<Rx::Component::AnimationMap>({map});
 
-        flecs::entity skeletonPrefab = world.prefab((assetName + "_Skeleton").c_str());
-        skeletonPrefab.set<Rx::Component::Skeleton>({nodes, nodeNames, animationPrefab});
-        skeletonPrefab.add(world.lookup("IsSkeletonOf"), asset);
+        asset.set<Rx::Component::Skeleton>({nodes, std::vector<Component::VkNode>(), nodeNames,  animationPrefab});
 
+        asset.add<Rx::Component::VkSkeleton>();
+
+        Rx::Component::VkKeyFrameArrayBuffer keyFrameArrayBuffer;
+        keyFrameArrayBuffer.maxNumberKeyFrameArrays = maxNumberInstances;
+        keyFrameArrayBuffer.numberKeyFrameArrays = 0;
+        asset.set<Rx::Component::VkKeyFrameArrayBuffer>(keyFrameArrayBuffer);
+
+        asset.add<Rx::Component::VkSkeletonModelCompDescriptorSet>();
+        
         return asset;
     }
 
 
 
 
-    void createNodeInstanceEntities(flecs::world& world, const std::string& skelInstanceName, uint32_t& nodeIndex, const Component::Skeleton& skeleton, const flecs::entity& parent, flecs::entity& instanceEntity) {
+    void createNodeInstanceEntities(flecs::world& world, flecs::entity asset,  const std::string& skelInstanceName, uint32_t& nodeIndex, const Component::Skeleton& skeleton, const flecs::entity& parent, flecs::entity& instanceEntity, uint32_t skeletonIndex) {
 
         flecs::entity nodeInstanceEntity = world.entity((skelInstanceName + "_Node_" + skeleton.nodeNames[nodeIndex].name).c_str());
+        nodeInstanceEntity.add(world.lookup("IsNodeOfChild"), asset);
         nodeInstanceEntity.add(world.lookup("IsNodeOf"), instanceEntity);
         nodeInstanceEntity.add(world.lookup("IsChildNodeOf"), parent);
         nodeInstanceEntity.add<Rx::Component::Transform>();
         nodeInstanceEntity.set<Rx::Component::NodeIndex>({nodeIndex});
+        nodeInstanceEntity.set<Rx::Component::SkeletonIndex>({skeletonIndex});
 
 		uint32_t currentNodeIndex = nodeIndex;
         for(int j = 0; j < skeleton.nodes[currentNodeIndex].numberChildren; j++){
-            createNodeInstanceEntities(world, skelInstanceName, ++nodeIndex, skeleton, nodeInstanceEntity, instanceEntity);
+            createNodeInstanceEntities(world, asset, skelInstanceName, ++nodeIndex, skeleton, nodeInstanceEntity, instanceEntity, skeletonIndex);
         }
     }
 
@@ -311,37 +327,26 @@ namespace Asset{
     {
         flecs::entity instanceEntity = world.entity(name.c_str());
         instanceEntity.add(world.lookup("IsSkeletonModelInstanceOf"), asset);
-        
-        flecs::entity skeleton;
-        asset.children(world.lookup("IsSkeletonOf"), [&](flecs::entity child) {
-            skeleton = child;
-        });
 
-        instanceEntity.is_a(skeleton);
+        auto& skeletonEntityArray = asset.get_mut<Rx::Component::SkeletonEntityArray>();
+        uint32_t skeletonIndex = skeletonEntityArray.skeletons.size();
+        skeletonEntityArray.skeletons.push_back(instanceEntity);
 
-        auto& skeletonComp = skeleton.get<Rx::Component::Skeleton>();
-        Component::SkeletonBuffer skeletonBuffer;
-        skeletonBuffer.transforms.resize(skeletonComp.nodes.size());
-        for(uint32_t i = 0; i < skeletonBuffer.transforms.size(); i++ ){
-            skeletonBuffer.transforms[i] = {glm::mat4(1.f), glm::mat4(1.f)};
-        }
-        instanceEntity.set<Rx::Component::SkeletonBuffer>(skeletonBuffer);
+        const auto& skeleton = asset.get<Rx::Component::Skeleton>();
+        instanceEntity.is_a(skeleton.animationPrefab);
 
-
-        flecs::entity animationPrefab = skeletonComp.animationPrefab;
-        flecs::entity animationInstanceEntity = world.entity((std::string(animationPrefab.name().c_str()) + "_Instance_of_" + name).c_str());
-        animationInstanceEntity.is_a(animationPrefab);
-        animationInstanceEntity.add(world.lookup("IsAnimationOf"), instanceEntity);
+        instanceEntity.add<Rx::Component::KeyFrameBuffer>();
 
         flecs::entity rootNodeEntity = world.entity((name + "_RootNode").c_str());
+        rootNodeEntity.add(world.lookup("IsNodeOfChild"), asset);
         rootNodeEntity.add(world.lookup("IsNodeOf"), instanceEntity);
-        rootNodeEntity.add(world.lookup("IsRootNodeOf"), animationInstanceEntity);
         rootNodeEntity.add<Rx::Component::Transform>();
         rootNodeEntity.set<Rx::Component::NodeIndex>({0});
+        rootNodeEntity.set<Rx::Component::SkeletonIndex>({skeletonIndex});
 
         uint32_t nodeIndex = 0;
-        for (int j = 0; j < skeletonComp.nodes[0].numberChildren; j++) {
-            createNodeInstanceEntities(world, name, ++nodeIndex, skeletonComp, rootNodeEntity, instanceEntity);
+        for (int j = 0; j < skeleton.nodes[0].numberChildren; j++) {
+            createNodeInstanceEntities(world, asset, name, ++nodeIndex, skeleton, rootNodeEntity, instanceEntity, skeletonIndex);
         }
 
         return instanceEntity;

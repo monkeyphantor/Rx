@@ -56,6 +56,16 @@ VkSkeletonArrayBuffer.hpp
 VkSkeletonArrayBuffer.cpp
 VkSkeletonModelDescriptorSet.hpp
 VkSkeletonModelDescriptorSet.cpp
+KeyFrameBuffer.hpp
+KeyFrameBuffer.cpp
+Skeleton.hpp
+Skeleton.cpp
+VkSkeleton.hpp
+VkSkeleton.cpp
+VkKeyFrameArrayBuffer.hpp
+VkKeyFrameArrayBuffer.cpp
+VkSkeletonModelCompDescriptorSet.hpp
+VkSkeletonModelCompDescriptorSet.cpp
 )
 
 target_include_directories(rx_component PUBLIC ../core ../flecs)

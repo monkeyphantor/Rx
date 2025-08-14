@@ -14,10 +14,12 @@ namespace Rx
             createInstancedColorMeshPipelineLayout();
             createTextureModelPipelineLayout();
             createSkeletonModelPipelineLayout();
+            createSkeletonModelCompPipelineLayout();
         }
 
         void destroyPipelineLayouts()
         {
+            destroySkeletonModelCompPipelineLayout();
             destroySkeletonModelPipelineLayout();
             destroyTextureModelPipelineLayout();
             destroyInstancedColorMeshPipelineLayout();
@@ -150,6 +152,37 @@ namespace Rx
             (Core::vkDevice, 
             skeletonModelPipelineLayout, 
             nullptr);
+            );
+        }
+
+        void createSkeletonModelCompPipelineLayout(){
+            VkPushConstantRange pushConstantRange{};
+            pushConstantRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+            pushConstantRange.offset = 0;
+            pushConstantRange.size = sizeof(int); // As used in the system: struct { int numberNodes; }
+
+            VkPipelineLayoutCreateInfo layoutInfo{};
+            layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            layoutInfo.setLayoutCount = 1;
+            layoutInfo.pSetLayouts = &skeletonModelCompDescriptorSetLayout;
+            layoutInfo.pushConstantRangeCount = 1;
+            layoutInfo.pPushConstantRanges = &pushConstantRange;
+
+            RX_VK_MUTEX(
+            RX_CHECK_VULKAN(
+            vkCreatePipelineLayout
+            (Core::vkDevice, 
+            &layoutInfo, 
+            nullptr, 
+            &skeletonModelCompPipelineLayout),
+            "createSkeletonModelCompPipelineLayout",
+            "vkCreatePipelineLayout"
+            ));
+        }
+
+        void destroySkeletonModelCompPipelineLayout(){
+            RX_VK_MUTEX(
+            vkDestroyPipelineLayout(Core::vkDevice, skeletonModelCompPipelineLayout, nullptr);
             );
         }
     }

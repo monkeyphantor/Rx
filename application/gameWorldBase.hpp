@@ -35,9 +35,13 @@ namespace Rx{
         //render entities
         flecs::entity postUpdate;
         flecs::entity preRender;
-        flecs::entity onRenderBegin;
-        flecs::entity onRender;
-        flecs::entity onRenderEnd;
+        flecs::entity onRecordBegin;
+        flecs::entity onRecordBarrier1;
+        flecs::entity onRecordComp;
+        flecs::entity onRecordRenderPassBegin;
+        flecs::entity onRecordBarrier2;
+        flecs::entity onRecordRender;
+        flecs::entity onRecordEnd;
 
 
         flecs::entity colorMeshArrayInstanceRelation;
@@ -52,6 +56,7 @@ namespace Rx{
         flecs::entity IsNodeOf;
         flecs::entity IsChildNodeOf;
         flecs::entity IsChildNodeInstanceOf;
+        flecs::entity IsNodeOfChild;
 
 
     private:

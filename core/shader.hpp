@@ -34,5 +34,7 @@ namespace Rx
         inline Shader skeletonModelVertexShader{"shader/SkeletonModelShader.vert.spv"};
         inline Shader skeletonModelFragmentShader{"shader/SkeletonModelShader.frag.spv"};
 
+        inline Shader skeletonModelComputeShader{"shader/SkeletonModelShader.comp.spv"};
+
     }
 }

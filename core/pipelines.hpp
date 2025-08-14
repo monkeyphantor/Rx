@@ -29,5 +29,9 @@ namespace Rx
         inline VkPipeline skeletonModelPipeline;
         void createSkeletonModelPipeline();
         void destroySkeletonModelPipeline();
+
+        inline VkPipeline skeletonModelCompPipeline;
+        void createSkeletonModelCompPipeline();
+        void destroySkeletonModelCompPipeline();
     }
 }

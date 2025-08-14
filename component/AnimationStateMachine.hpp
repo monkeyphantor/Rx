@@ -3,7 +3,7 @@
 #include "flecs.h"
 #include <variant>
 #include "Skeleton.hpp"
-#include "SkeletonBuffer.hpp"
+#include "KeyFrameBuffer.hpp"
 #include "Node.hpp"
 #include "AnimationClip.hpp"
 #include "AnimationBone.hpp"
@@ -34,40 +34,41 @@ namespace Component {
 
 
     struct UpdateVisitor{
-        SkeletonBuffer& skeletonBuffer;
-        const Skeleton& skeleton;
+        flecs::entity skeletonInstance;
+        KeyFrameBuffer& keyFrameBuffer;
+
        
-        void calculateBoneTransforms(const std::vector<KeyFrame>& keyFrames) {
-            std::vector<glm::mat4> transforms(skeleton.nodes.size(), glm::mat4(1.0f));
-            std::vector<glm::mat4> nodeTransforms(skeleton.nodes.size(), glm::mat4(1.0f));
+        // void calculateBoneTransforms(const std::vector<KeyFrame>& keyFrames) {
+        //     std::vector<glm::mat4> transforms(skeleton.nodes.size(), glm::mat4(1.0f));
+        //     std::vector<glm::mat4> nodeTransforms(skeleton.nodes.size(), glm::mat4(1.0f));
 
-            for(uint32_t i = 0; i < transforms.size(); i++){
-                const Node& node = skeleton.nodes[i];
-                if(node.isBone){
-                    const KeyFrame& keyFrame = keyFrames[node.boneIndex];
-                    transforms[i] = glm::translate(glm::mat4(1.0f), keyFrame.position) * glm::toMat4(keyFrame.rotation) * glm::scale(glm::mat4(1.0f), keyFrame.scaling);
-                }else{
-                    transforms[i] = node.offset;
-                }
-            }
+        //     for(uint32_t i = 0; i < transforms.size(); i++){
+        //         const Node& node = skeleton.nodes[i];
+        //         if(node.isBone){
+        //             const KeyFrame& keyFrame = keyFrames[node.boneIndex];
+        //             transforms[i] = glm::translate(glm::mat4(1.0f), keyFrame.position) * glm::toMat4(keyFrame.rotation) * glm::scale(glm::mat4(1.0f), keyFrame.scaling);
+        //         }else{
+        //             transforms[i] = node.offset;
+        //         }
+        //     }
 
-            nodeTransforms[0] = transforms[0];
-            for(uint32_t i = 1; i < transforms.size(); i++){
-                const int parentIndex = skeleton.nodes[i].parentIndex;
-                nodeTransforms[i] = nodeTransforms[parentIndex] * transforms[i];
-            }
+        //     nodeTransforms[0] = transforms[0];
+        //     for(uint32_t i = 1; i < transforms.size(); i++){
+        //         const int parentIndex = skeleton.nodes[i].parentIndex;
+        //         nodeTransforms[i] = nodeTransforms[parentIndex] * transforms[i];
+        //     }
 
-            for(uint32_t i = 0; i < nodeTransforms.size(); i++){
-                const Node& node = skeleton.nodes[i];
-                if(node.isBone){
-                    skeletonBuffer.transforms[i].local = nodeTransforms[i];
-                    skeletonBuffer.transforms[i].bone = nodeTransforms[i] * node.offset;
-                }else{
-                    skeletonBuffer.transforms[i].local = nodeTransforms[i];
-                    skeletonBuffer.transforms[i].bone = nodeTransforms[i];
-                }
-            }
-        }
+        //     for(uint32_t i = 0; i < nodeTransforms.size(); i++){
+        //         const Node& node = skeleton.nodes[i];
+        //         if(node.isBone){
+        //             skeletonBuffer.transforms[i].local = nodeTransforms[i];
+        //             skeletonBuffer.transforms[i].bone = nodeTransforms[i] * node.offset;
+        //         }else{
+        //             skeletonBuffer.transforms[i].local = nodeTransforms[i];
+        //             skeletonBuffer.transforms[i].bone = nodeTransforms[i];
+        //         }
+        //     }
+        // }
         
         // void calculateBoneTransforms(const std::vector<AnimationBone>& animationBones, uint32_t& nodeIndex, float animationTime, glm::mat4 parentTransform) {
         //     const Node& node = nodes[nodeIndex];
@@ -117,7 +118,7 @@ namespace Component {
         // }
 
         uint32_t getUpperKeyFrameIndex(const std::vector<float>& keyFrameTimes, const float animationTime) {
-            uint32_t keyFrameIndex = 0;
+            uint32_t keyFrameIndex = keyFrameTimes.size() - 1; // Default to the last keyframe
             for (uint32_t i = 0; i < keyFrameTimes.size(); i++) {
                 if (animationTime <= keyFrameTimes[i]) {
                     keyFrameIndex = i;
@@ -135,14 +136,15 @@ namespace Component {
             return scaleFactor;
         }
 
-        std::vector<KeyFrame> interpolateKeyFrames(const std::vector<KeyFrame>& lowerKeyFrames, const std::vector<KeyFrame>& upperKeyFrames, float scaleFactor) {
-            std::vector<KeyFrame> interpolatedKeyFrames;
+        std::vector<VkKeyFrame> interpolateKeyFrames(const std::vector<KeyFrame>& lowerKeyFrames, const std::vector<KeyFrame>& upperKeyFrames, float scaleFactor) {
+            std::vector<VkKeyFrame> interpolatedKeyFrames;
             interpolatedKeyFrames.reserve(lowerKeyFrames.size());
             for (size_t i = 0; i < lowerKeyFrames.size(); ++i) {
-                KeyFrame interpolatedKeyFrame;
-                interpolatedKeyFrame.position = glm::mix(lowerKeyFrames[i].position, upperKeyFrames[i].position, scaleFactor);
-                interpolatedKeyFrame.rotation = glm::slerp(lowerKeyFrames[i].rotation, upperKeyFrames[i].rotation, scaleFactor);
-                interpolatedKeyFrame.scaling = glm::mix(lowerKeyFrames[i].scaling, upperKeyFrames[i].scaling, scaleFactor);
+                VkKeyFrame interpolatedKeyFrame;
+                interpolatedKeyFrame.position = glm::vec4(glm::mix(lowerKeyFrames[i].position, upperKeyFrames[i].position, scaleFactor), 1.0f);
+                auto quat = glm::slerp(lowerKeyFrames[i].rotation, upperKeyFrames[i].rotation, scaleFactor);
+                interpolatedKeyFrame.rotation = glm::vec4(quat.x, quat.y, quat.z, quat.w);
+                interpolatedKeyFrame.scaling = glm::vec4(glm::mix(lowerKeyFrames[i].scaling, upperKeyFrames[i].scaling, scaleFactor), 1.0f);
                 interpolatedKeyFrames.push_back(interpolatedKeyFrame);
             }
             return interpolatedKeyFrames;
@@ -150,7 +152,7 @@ namespace Component {
 
         void operator()(SingleAnimation& state) {
             uint32_t nodeIndex = 0;
-            const auto& animationPrefab = skeleton.animationPrefab.get<Rx::Component::AnimationClip>(state.animation);
+            const auto& animationPrefab = skeletonInstance.get<Rx::Component::AnimationClip>(state.animation);
             const auto& keyFrameTimes = animationPrefab.keyFrameTimes;
             uint32_t keyFrameIndex = getUpperKeyFrameIndex(keyFrameTimes, state.animationTime);
             keyFrameIndex = keyFrameIndex * (keyFrameIndex > 0) + 1 * (keyFrameIndex == 0); // Ensure we have a valid index
@@ -159,9 +161,8 @@ namespace Component {
             const auto& lowerKeyFrames = animationPrefab.keyFrames[keyFrameIndex - 1];
 
             float scaleFactor = getScaleFactor(keyFrameTimes[keyFrameIndex - 1], keyFrameTimes[keyFrameIndex], state.animationTime);
-            auto interpolatedKeyFrames = interpolateKeyFrames(lowerKeyFrames, upperKeyFrames, scaleFactor);
-
-            calculateBoneTransforms(interpolatedKeyFrames);
+            keyFrameBuffer.keyFrames = interpolateKeyFrames(lowerKeyFrames, upperKeyFrames, scaleFactor);
+            //calculateBoneTransforms(interpolatedKeyFrames);
             
             state.animationTime += state.ticksPerSecond * state.animationSpeed * Time::deltaTime;
             state.animationTime = fmod(state.animationTime, state.duration);
@@ -199,8 +200,8 @@ namespace Component {
             }
         }
 
-        void update(SkeletonBuffer& skeletonBuffer, const Skeleton& skeleton){
-            std::visit(UpdateVisitor(skeletonBuffer, skeleton), currentState);
+        void update(flecs::entity skeletonInstance, KeyFrameBuffer& keyFrameBuffer){
+            std::visit(UpdateVisitor(skeletonInstance, keyFrameBuffer), currentState);
         }
     };
 
