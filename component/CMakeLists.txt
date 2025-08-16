@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.16.3)
 project(rx)
 
 add_library(rx_component STATIC
-transform.hpp
-transform.cpp
+Transform.hpp
+Transform.cpp
 ColorMesh.hpp
 ColorMesh.cpp
 VkColorMesh.hpp
@@ -13,15 +13,16 @@ VkColorModelBuffer.hpp
 VkColorModelBuffer.cpp
 VkColorModelDescriptorSet.hpp
 VkColorModelDescriptorSet.cpp
-flyingCamera.hpp
-velocity.hpp
-velocity.cpp
-meshArray.hpp
-meshArray.cpp
-colorArrayGraphics.hpp
-colorArrayGraphics.cpp
-colorMeshArray.hpp
-colorMeshArray.cpp
+FlyingCamera.hpp
+FlyingCamera.cpp
+Velocity.hpp
+Velocity.cpp
+MeshArray.hpp
+MeshArray.cpp
+ColorArrayGraphics.hpp
+ColorArrayGraphics.cpp
+ColorMeshArray.hpp
+ColorMeshArray.cpp
 VkInstancedColorModelBuffer.hpp
 VkInstancedColorModelBuffer.cpp
 VkIndirectBuffer.hpp

@@ -1,6 +1,6 @@
    #pragma once
 
-#include "global.hpp"
+#include "Global.hpp"
 #include "VkSkeletonArrayBuffer.hpp"
 
 namespace Rx{

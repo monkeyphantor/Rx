@@ -1,6 +1,6 @@
 #pragma once
 
-#include "global.hpp"
+#include "Global.hpp"
 #include "NodeTransform.hpp"
 #include "VkSkeletonArrayBuffer.hpp"
 

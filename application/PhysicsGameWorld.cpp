@@ -1,5 +1,5 @@
 #include "PhysicsGameWorld.hpp"
-#include "application.hpp"
+#include "Application.hpp"
 #include "flecs.h"
 #include <Jolt/RegisterTypes.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
@@ -10,7 +10,7 @@
 #include "ContactInfo.hpp"
 #include "Velocity.hpp"
 #include "Sensor.hpp"
-#include "transform.hpp"
+#include "Transform.hpp"
 
 namespace Rx{
     PhysicsGameWorld::PhysicsGameWorld(Application& app, flecs::world& world)

@@ -1,4 +1,6 @@
 #pragma once
+#include "Global.hpp"
+#include "flecs.h"
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
@@ -161,7 +163,6 @@ public:
     }
 };
 
-#include "global.hpp"
 
 namespace Core{
     inline JPH::Vec3 toJoltVec3(const glm::vec3& vec) {
@@ -181,7 +182,6 @@ namespace Core{
     }
 }
 
-#include "flecs.h"
 
 struct CollisionEvent{
     flecs::entity_t entity1;

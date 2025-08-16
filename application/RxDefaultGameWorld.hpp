@@ -1,6 +1,6 @@
 #pragma once
-#include "application.hpp"
-#include "../component/flyingCamera.hpp"
+#include "Application.hpp"
+#include "FlyingCamera.hpp"
 namespace Rx {
 
 	class RxDefaultGameWorld : public GameWorld

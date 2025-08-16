@@ -1,5 +1,5 @@
 #pragma once
-#include "buffer.hpp"
+#include "Buffer.hpp"
 namespace Rx{
     namespace Core{
         struct PointLight{

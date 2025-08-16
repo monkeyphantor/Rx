@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../core/buffer.hpp"
-#include "../flecs/include/flecs.h"
-#include "meshArray.hpp"
+#include "Buffer.hpp"
+#include "flecs.h"
+#include "MeshArray.hpp"
 #include "VkInstancedColorModelBuffer.hpp"
 
 namespace Rx

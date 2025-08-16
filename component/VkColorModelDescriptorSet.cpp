@@ -1,10 +1,10 @@
 #include "VkColorModelDescriptorSet.hpp"
-#include "descriptorSetLayouts.hpp"
+#include "DescriptorSetLayouts.hpp"
 #include "Light.hpp"
-#include "descriptorPool.hpp"
-#include "mutex.hpp"
-#include "device.hpp"
-#include "eye.hpp"
+#include "DescriptorPool.hpp"
+#include "Mutex.hpp"
+#include "Device.hpp"
+#include "Eye.hpp"
 
 void graphics_component_on_add(flecs::entity e, Rx::Component::VkColorModelBuffer& modelBuffer, Rx::Component::VkColorModelDescriptorSet& graphics)
 {

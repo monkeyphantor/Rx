@@ -1,5 +1,5 @@
 #pragma once
-#include "../core/global.hpp"
+#include "Global.hpp"
 
 
 namespace Rx{

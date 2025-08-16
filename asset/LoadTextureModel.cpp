@@ -11,7 +11,7 @@
 #include "VkTransformBuffer.hpp"
 #include "VkTextureArray.hpp"
 #include "VkTextureModelDescriptorSet.hpp"
-#include "gameWorldBase.hpp"
+#include "GameWorldBase.hpp"
 
 namespace Rx {
     namespace Asset {

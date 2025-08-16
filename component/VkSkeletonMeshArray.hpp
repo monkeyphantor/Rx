@@ -1,9 +1,9 @@
 #pragma once
 
-#include "global.hpp"
-#include "flecs.h"
+#include "Global.hpp"
+#include "Flecs.h"
 #include "SkeletonMeshArray.hpp"
-#include "buffer.hpp"
+#include "Buffer.hpp"
 
 namespace Rx{
     namespace Component{

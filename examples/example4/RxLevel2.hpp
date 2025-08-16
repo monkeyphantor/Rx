@@ -1,8 +1,8 @@
 #pragma once
-#include "gameWorld.hpp"
-#include "level.hpp"
-#include "flyingCamera.hpp"
-#include "instancedColorGraphics.hpp"
+#include "GameWorld.hpp"
+#include "Level.hpp"
+#include "FlyingCamera.hpp"
+#include "InstancedColorGraphics.hpp"
 
 struct Actors2;
 struct FireballSystem2;

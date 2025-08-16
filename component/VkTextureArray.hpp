@@ -1,8 +1,8 @@
 #pragma once
 
-#include "global.hpp"
+#include "Global.hpp"
 #include "flecs.h"
-#include "image.hpp"
+#include "Image.hpp"
 #include "TextureArray.hpp"
 
 namespace Rx{

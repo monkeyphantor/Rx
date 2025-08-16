@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.16.3)
 project(RxProject)
 
 add_library(rx_shape STATIC
-shape.hpp
-shape.cpp
+Shape.hpp
+Shape.cpp
 )
 
 target_include_directories(rx_shape PUBLIC ../core )

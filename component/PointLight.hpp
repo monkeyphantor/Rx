@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/Light.hpp"
+#include "Light.hpp"
 #include "Transform.hpp"
 
 namespace Rx{

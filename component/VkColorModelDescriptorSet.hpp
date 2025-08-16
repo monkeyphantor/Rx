@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../core/global.hpp"
+#include "Global.hpp"
 #include "flecs.h"
 #include "VkColorModelBuffer.hpp"
 

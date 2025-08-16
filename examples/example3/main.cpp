@@ -1,5 +1,5 @@
 #include "Level1.hpp"
-#include "application.hpp"
+#include "Application.hpp"
 #include "RxDefaultLoadingScreen.hpp"
 #include "GameWorldExample3.hpp"
 

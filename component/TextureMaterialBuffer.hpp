@@ -1,6 +1,6 @@
 #pragma once
 
-#include "global.hpp"
+#include "Global.hpp"
 #include "flecs.h"
 #include "Material.hpp"
 

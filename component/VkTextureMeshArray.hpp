@@ -1,9 +1,9 @@
 #pragma once
 
-#include "global.hpp"
+#include "Global.hpp"
 #include "flecs.h"
 #include "TextureMeshArray.hpp"
-#include "buffer.hpp"
+#include "Buffer.hpp"
 
 namespace Rx{
     namespace Component{
