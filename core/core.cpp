@@ -1,5 +1,5 @@
-#include "core.hpp"
-#include "mutex.hpp"
+#include "Core.hpp"
+#include "Mutex.hpp"
 
 namespace Rx
 {

@@ -7,12 +7,12 @@
 #include <atomic>
 #include <chrono>
 
-#include "../core/global.hpp"
-#include "../core/core.hpp"
-#include "../flecs/include/flecs.h"
-#include "level.hpp"
-#include "gameWorld.hpp"
-#include "loadingScreen.hpp"
+#include "Global.hpp"
+#include "Core.hpp"
+#include "flecs.h"
+#include "Level.hpp"
+#include "GameWorld.hpp"
+#include "LoadingScreen.hpp"
 
 
 // --- The Application Class (Multi-World Version) ---

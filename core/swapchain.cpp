@@ -1,9 +1,9 @@
-#include "swapchain.hpp"
-#include "surface.hpp"
-#include "physicalDevice.hpp"
-#include "device.hpp"
-#include "semaphore.hpp"
-#include "command.hpp"
+#include "Swapchain.hpp"
+#include "Surface.hpp"
+#include "PhysicalDevice.hpp"
+#include "Device.hpp"
+#include "Semaphore.hpp"
+#include "Command.hpp"
 
 namespace Rx
 {

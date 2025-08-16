@@ -1,6 +1,6 @@
   #pragma once
 
-#include "gameWorldBase.hpp"
+#include "GameWorldBase.hpp"
 
 struct LevelAsset {};
 

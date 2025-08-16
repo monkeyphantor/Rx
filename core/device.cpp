@@ -1,5 +1,5 @@
-#include "device.hpp"
-#include "physicalDevice.hpp"
+#include "Device.hpp"
+#include "PhysicalDevice.hpp"
 
 namespace Rx
 {

@@ -1,6 +1,6 @@
 #pragma once
-#include "global.hpp"
-#include "vertex.hpp"
+#include "Global.hpp"
+#include "Vertex.hpp"
 namespace Rx
 {
 

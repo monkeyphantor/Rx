@@ -1,6 +1,6 @@
 #pragma once
 
-#include "image.hpp"
+#include "Image.hpp"
 #include "flecs.h"
 namespace Rx
 {

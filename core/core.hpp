@@ -1,35 +1,35 @@
 #pragma once
 
-#include "window.hpp"
-#include "time.hpp"
-#include "input.hpp"
+#include "Window.hpp"
+#include "Time.hpp"
+#include "Input.hpp"
 
-#include "instance.hpp"
-#include "surface.hpp"
-#include "physicalDevice.hpp"
-#include "device.hpp"
-#include "queue.hpp"
-#include "allocator.hpp"
-#include "descriptorPool.hpp"
+#include "Instance.hpp"
+#include "Surface.hpp"
+#include "PhysicalDevice.hpp"
+#include "Device.hpp"
+#include "Queue.hpp"
+#include "Allocator.hpp"
+#include "DescriptorPool.hpp"
 
-#include "image.hpp"
-#include "buffer.hpp"
+#include "Image.hpp"
+#include "Buffer.hpp"
 
-#include "eye.hpp"
+#include "Eye.hpp"
 
-#include "semaphore.hpp"
-#include "fence.hpp"
-#include "command.hpp"
+#include "Semaphore.hpp"
+#include "Fence.hpp"
+#include "Command.hpp"
 
-#include "swapchain.hpp"
-#include "renderPass.hpp"
-#include "framebuffers.hpp"
+#include "Swapchain.hpp"
+#include "RenderPass.hpp"
+#include "Framebuffers.hpp"
 
 #include "Light.hpp"
 
-#include "descriptorSetLayouts.hpp"
-#include "pipelineLayouts.hpp"
-#include "pipelines.hpp"
+#include "DescriptorSetLayouts.hpp"
+#include "PipelineLayouts.hpp"
+#include "Pipelines.hpp"
 
 
 namespace Rx

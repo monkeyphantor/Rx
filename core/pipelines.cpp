@@ -1,11 +1,11 @@
-#include "pipelines.hpp"
-#include "pipelineLayouts.hpp"
-#include "mutex.hpp"
-#include "device.hpp"
-#include "shader.hpp"
-#include "vertex.hpp"
-#include "physicalDevice.hpp"
-#include "renderPass.hpp"
+#include "Pipelines.hpp"
+#include "PipelineLayouts.hpp"
+#include "Mutex.hpp"
+#include "Device.hpp"
+#include "Shader.hpp"
+#include "Vertex.hpp"
+#include "PhysicalDevice.hpp"
+#include "RenderPass.hpp"
 
 namespace Rx
 {

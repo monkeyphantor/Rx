@@ -1,8 +1,8 @@
-#include "framebuffers.hpp"
-#include "physicalDevice.hpp"
-#include "device.hpp"
-#include "swapchain.hpp"
-#include "renderPass.hpp"
+#include "Framebuffers.hpp"
+#include "PhysicalDevice.hpp"
+#include "Device.hpp"
+#include "Swapchain.hpp"
+#include "RenderPass.hpp"
 
 namespace Rx
 {

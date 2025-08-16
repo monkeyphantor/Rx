@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../core/buffer.hpp"
-#include "../flecs/include/flecs.h"
+#include "Buffer.hpp"
+#include "flecs.h"
 namespace Rx {
     namespace Component {
         struct VkInstancedColorModelBuffer {

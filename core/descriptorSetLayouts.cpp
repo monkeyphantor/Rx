@@ -1,6 +1,6 @@
-#include "descriptorSetLayouts.hpp"
-#include "device.hpp"
-#include "mutex.hpp"
+#include "DescriptorSetLayouts.hpp"
+#include "Device.hpp"
+#include "Mutex.hpp"
 
 namespace Rx
 {

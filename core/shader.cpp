@@ -1,5 +1,5 @@
-#include "shader.hpp"
-#include "device.hpp"
+#include "Shader.hpp"
+#include "Device.hpp"
 
 namespace Rx
 {

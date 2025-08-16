@@ -1,9 +1,9 @@
 #include "VkSkeletonModelCompDescriptorSet.hpp"
-#include "descriptorPool.hpp"
-#include "mutex.hpp"
-#include "device.hpp"
+#include "DescriptorPool.hpp"
+#include "Mutex.hpp"
+#include "Device.hpp"
 #include "NodeTransform.hpp"
-#include "descriptorSetLayouts.hpp"
+#include "DescriptorSetLayouts.hpp"
 
 namespace Rx{
     namespace Component{

@@ -1,11 +1,11 @@
  #pragma once
 
-#include "global.hpp"
-#include "command.hpp"
-#include "renderpass.hpp"
-#include "mutex.hpp"
+#include "Global.hpp"
+#include "Command.hpp"
+#include "RenderPass.hpp"
+#include "Mutex.hpp"
 #include "flecs.h"
-#include "level.hpp"
+#include "Level.hpp"
 
 namespace Rx{
 

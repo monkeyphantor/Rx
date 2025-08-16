@@ -1,6 +1,6 @@
-#include "input.hpp"
-#include "window.hpp"
-#include "time.hpp"
+#include "Input.hpp"
+#include "Window.hpp"
+#include "Time.hpp"
 
 namespace Rx
 {

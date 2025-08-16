@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../core/global.hpp"
-#include "../flecs/include/flecs.h"
-#include "meshArray.hpp"
-#include "../core/buffer.hpp"
+#include "Global.hpp"
+#include "flecs.h"
+#include "MeshArray.hpp"
+#include "Buffer.hpp"
 namespace Rx{
     namespace Component{
         struct ColorMeshArray{

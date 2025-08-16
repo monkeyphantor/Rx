@@ -1,10 +1,10 @@
-#include "colorArrayGraphics.hpp"
-#include "../core/descriptorPool.hpp"
-#include "../core/descriptorSetLayouts.hpp"
-#include "../core/mutex.hpp"
-#include "../core/eye.hpp"
-#include "../core/device.hpp"
-#include "../core/Light.hpp"
+#include "ColorArrayGraphics.hpp"
+#include "DescriptorPool.hpp"
+#include "DescriptorSetLayouts.hpp"
+#include "Mutex.hpp"
+#include "Eye.hpp"
+#include "Device.hpp"
+#include "Light.hpp"
 #include "ColorModelInstance.hpp"
 namespace Rx
 {

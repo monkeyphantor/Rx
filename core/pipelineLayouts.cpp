@@ -1,7 +1,7 @@
-#include "pipelineLayouts.hpp"
-#include "descriptorSetLayouts.hpp"
-#include "mutex.hpp"
-#include "device.hpp"
+#include "PipelineLayouts.hpp"
+#include "DescriptorSetLayouts.hpp"
+#include "Mutex.hpp"
+#include "Device.hpp"
 
 namespace Rx
 {

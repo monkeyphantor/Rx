@@ -1,9 +1,9 @@
-#include "command.hpp"
-#include "physicalDevice.hpp"
-#include "device.hpp"
-#include "semaphore.hpp"
-#include "fence.hpp"
-#include "mutex.hpp"
+#include "Command.hpp"
+#include "PhysicalDevice.hpp"
+#include "Device.hpp"
+#include "Semaphore.hpp"
+#include "Fence.hpp"
+#include "Mutex.hpp"
 namespace Rx
 {
     namespace Core

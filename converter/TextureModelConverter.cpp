@@ -1,6 +1,6 @@
 #include "TextureModelConverter.hpp"
 
-#include "vertex.hpp"
+#include "Vertex.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>

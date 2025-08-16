@@ -1,7 +1,7 @@
-#include "physicalDevice.hpp"
-#include "window.hpp"
-#include "instance.hpp"
-#include "surface.hpp"
+#include "PhysicalDevice.hpp"
+#include "Window.hpp"
+#include "Instance.hpp"
+#include "Surface.hpp"
 
 namespace Rx
 {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "global.hpp"
-#include "buffer.hpp"
+#include "Global.hpp"
+#include "Buffer.hpp"
 #include "flecs.h"
 
 namespace Rx{

@@ -1,6 +1,6 @@
-#include "surface.hpp"
-#include "window.hpp"
-#include "instance.hpp"
+#include "Surface.hpp"
+#include "Window.hpp"
+#include "Instance.hpp"
 
 namespace Rx
 {

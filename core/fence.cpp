@@ -1,5 +1,5 @@
-#include "fence.hpp"
-#include "device.hpp"
+#include "Fence.hpp"
+#include "Device.hpp"
 
 namespace Rx
 {

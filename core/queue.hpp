@@ -1,7 +1,7 @@
 #pragma once
 
-#include "global.hpp"
-#include "command.hpp"
+#include "Global.hpp"
+#include "Command.hpp"
 
 namespace Rx
 {

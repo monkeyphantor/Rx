@@ -1,5 +1,5 @@
-#include "application.hpp"
-#include "input.hpp"
+#include "Application.hpp"
+#include "Input.hpp"
 namespace Rx{
         Application::Application() : 
                 state(State::LOADING)

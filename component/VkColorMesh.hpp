@@ -1,9 +1,9 @@
 #pragma once
 
-#include "global.hpp"
-#include "queue.hpp"
-#include "command.hpp"
-#include "buffer.hpp"
+#include "Global.hpp"
+#include "Queue.hpp"
+#include "Command.hpp"
+#include "Buffer.hpp"
 #include "ColorMesh.hpp"
 #include "flecs.h"
 namespace Rx

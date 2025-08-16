@@ -1,6 +1,6 @@
 #pragma once
-#include "loadingScreen.hpp"
-#include "flyingCamera.hpp"
+#include "LoadingScreen.hpp"
+#include "FlyingCamera.hpp"
 #include "VkColorMesh.hpp"
 #include "VkColorModelDescriptorSet.hpp"
 struct Actor;

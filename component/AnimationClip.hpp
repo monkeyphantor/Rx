@@ -1,5 +1,5 @@
 #pragma once
-#include "global.hpp"
+#include "Global.hpp"
 #include "AnimationBone.hpp"
 
 namespace Rx {

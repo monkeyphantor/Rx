@@ -1,5 +1,5 @@
 #include "VkTextureMaterialBuffer.hpp"
-#include "material.hpp"
+#include "Material.hpp"
 
 namespace Rx {
     namespace Component {

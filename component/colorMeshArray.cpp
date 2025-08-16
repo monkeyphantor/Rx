@@ -1,9 +1,9 @@
-#include "colorMeshArray.hpp"
+#include "ColorMeshArray.hpp"
 
-#include "../core/buffer.hpp"
-#include "../core/mutex.hpp"
-#include "../core/command.hpp"
-#include "../core/queue.hpp"
+#include "Buffer.hpp"
+#include "Mutex.hpp"
+#include "Command.hpp"
+#include "Queue.hpp"
 
 namespace Rx{
     namespace Component{

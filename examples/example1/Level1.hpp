@@ -1,13 +1,13 @@
 #pragma once
-#include "gameWorld.hpp"
-#include "level.hpp"
+#include "GameWorld.hpp"
+#include "Level.hpp"
 #include "DirectionalLight.hpp"
 #include "VkColorModelBuffer.hpp"
 #include "ColorMesh.hpp"
 #include "VkColorMesh.hpp"
 #include "VkColorModelDescriptorSet.hpp"
 #include "Material.hpp"
-#include "shape.hpp"
+#include "Shape.hpp"
 
 #define random(lower, upper) ((static_cast<float>(rand())/static_cast<float>(RAND_MAX))*((upper)-(lower)) + (lower))
 

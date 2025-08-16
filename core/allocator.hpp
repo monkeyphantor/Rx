@@ -1,6 +1,6 @@
 #pragma once
 
-#include "global.hpp"
+#include "Global.hpp"
 #include "vma/vk_mem_alloc.h"
 
 namespace Rx

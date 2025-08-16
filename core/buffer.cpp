@@ -1,8 +1,8 @@
-#include "buffer.hpp"
-#include "physicalDevice.hpp"
-#include "device.hpp"
-#include "allocator.hpp"
-#include "mutex.hpp"
+#include "Buffer.hpp"
+#include "PhysicalDevice.hpp"
+#include "Device.hpp"
+#include "Allocator.hpp"
+#include "Mutex.hpp"
 
 namespace Rx
 {

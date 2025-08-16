@@ -11,7 +11,7 @@
 #include "VkTransformBuffer.hpp"
 #include "VkTextureArray.hpp"
 #include "VkSkeletonModelDescriptorSet.hpp"
-#include "gameWorldBase.hpp"
+#include "GameWorldBase.hpp"
 #include "LoadTextureModel.hpp"
 #include "NodeTransform.hpp"
 #include "Node.hpp"
@@ -299,6 +299,8 @@ namespace Asset{
         asset.set<Rx::Component::VkKeyFrameArrayBuffer>(keyFrameArrayBuffer);
 
         asset.add<Rx::Component::VkSkeletonModelCompDescriptorSet>();
+        
+        asset.add<Rx::Component::SkeletonEntityArray>();
         
         return asset;
     }

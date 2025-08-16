@@ -1,7 +1,7 @@
-#include "queue.hpp"
-#include "physicalDevice.hpp"
-#include "device.hpp"
-#include "swapchain.hpp"
+#include "Queue.hpp"
+#include "PhysicalDevice.hpp"
+#include "Device.hpp"
+#include "Swapchain.hpp"
 
 namespace Rx
 {

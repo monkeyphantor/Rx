@@ -1,5 +1,5 @@
 #include "VkColorMesh.hpp"
-#include "mutex.hpp"
+#include "Mutex.hpp"
 void mesh_component_on_add(flecs::entity e, Rx::Component::ColorMesh& mesh, Rx::Component::VkColorMesh& colorMesh)
 {
 

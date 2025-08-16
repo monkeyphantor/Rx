@@ -1,16 +1,16 @@
-#include "gameWorldBase.hpp"
+#include "GameWorldBase.hpp"
 #include "VkColorMesh.hpp"
 #include "VkColorModelDescriptorSet.hpp"
-#include "colorMesh.hpp"
-#include "transform.hpp"
+#include "ColorMesh.hpp"
+#include "Transform.hpp"
 #include "VkInstancedColorModelBuffer.hpp"
-#include "colorMeshArray.hpp"
-#include "colorArrayGraphics.hpp"
+#include "ColorMeshArray.hpp"
+#include "ColorArrayGraphics.hpp"
 #include "VkIndirectBuffer.hpp"
 #include "ColorModelInstance.hpp"
 #include "VkInstancedColorModelDescriptorSet.hpp"
-#include "pipelineLayouts.hpp"
-#include "pipelines.hpp"
+#include "PipelineLayouts.hpp"
+#include "Pipelines.hpp"
 #include "PointLight.hpp"
 #include "DirectionalLight.hpp"
 #include "VkTextureMeshArray.hpp"
@@ -264,7 +264,7 @@ namespace Rx{
             IsNodeOf = world.entity("IsNodeOf");
             IsRootNodeOf = world.entity("IsRootNodeOf");
             IsChildNodeOf = world.entity("IsChildNodeOf");
-
+            IsNodeOfChild = world.entity("IsNodeOfChild");
 
             world.system<Component::Transform, Component::PointLight>()
             .kind(postUpdate)

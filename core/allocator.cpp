@@ -1,7 +1,7 @@
-#include "allocator.hpp"
-#include "instance.hpp"
-#include "physicalDevice.hpp"
-#include "device.hpp"
+#include "Allocator.hpp"
+#include "Instance.hpp"
+#include "PhysicalDevice.hpp"
+#include "Device.hpp"
 
 #define VMA_IMPLEMENTATION
 #include "vma/vk_mem_alloc.h"

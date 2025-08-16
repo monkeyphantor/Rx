@@ -1,5 +1,5 @@
-#include "descriptorPool.hpp"
-#include "device.hpp"
+#include "DescriptorPool.hpp"
+#include "Device.hpp"
 
 namespace Rx
 {

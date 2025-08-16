@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gameWorld.hpp"
+#include "GameWorld.hpp"
 #include "Physics.hpp"
 
 namespace Rx {

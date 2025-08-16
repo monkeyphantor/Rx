@@ -1,5 +1,5 @@
-#include "semaphore.hpp"
-#include "device.hpp"
+#include "Semaphore.hpp"
+#include "Device.hpp"
 
 namespace Rx
 {

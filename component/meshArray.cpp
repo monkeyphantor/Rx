@@ -1,4 +1,4 @@
-#include "meshArray.hpp"
+#include "MeshArray.hpp"
 
 namespace Rx
 {

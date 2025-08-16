@@ -1,5 +1,5 @@
-#include "eye.hpp"
-#include "window.hpp"
+#include "Eye.hpp"
+#include "Window.hpp"
 
 namespace Rx
 {

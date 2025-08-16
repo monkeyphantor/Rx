@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../core/global.hpp"
-#include "../core/time.hpp"
-#include "../core/input.hpp"
-#include "../core/eye.hpp"
+#include "Global.hpp"
+#include "Time.hpp"
+#include "Input.hpp"
+#include "Eye.hpp"
 
 namespace Rx
 {

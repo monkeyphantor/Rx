@@ -3,14 +3,14 @@ cmake_minimum_required(VERSION 3.16.3)
 project(rx)
 
 add_library(rx_app STATIC
-application.hpp
-application.cpp
-level.hpp
-gameWorldBase.hpp
-gameWorldBase.cpp
-loadingScreen.hpp
-gameWorld.hpp
-gameWorld.cpp
+Application.hpp
+Application.cpp
+Level.hpp
+GameWorldBase.hpp
+GameWorldBase.cpp
+LoadingScreen.hpp
+GameWorld.hpp
+GameWorld.cpp
 PhysicsGameWorld.hpp
 PhysicsGameWorld.cpp
 RxDefaultLoadingScreen.hpp

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "global.hpp"
-#include "image.hpp"
+#include "Global.hpp"
+#include "Image.hpp"
 
 namespace Rx
 {

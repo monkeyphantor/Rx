@@ -1,7 +1,7 @@
 #include "SkeletonModelConverter.hpp"
-#include "global.hpp"
+#include "Global.hpp"
 
-#include "vertex.hpp"
+#include "Vertex.hpp"
 
 #include "Skeleton.hpp"
 #include "LoadTextureModel.hpp"

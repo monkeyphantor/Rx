@@ -1,8 +1,8 @@
 #pragma once
 
 #include "PhysicsGameWorld.hpp"
-#include "window.hpp"
-#include "flyingCamera.hpp"
+#include "Window.hpp"
+#include "FlyingCamera.hpp"
 
 
     class GameWorldExample4 : public Rx::PhysicsGameWorld {

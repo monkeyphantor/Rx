@@ -1,5 +1,5 @@
 #pragma once
-#include "global.hpp"
+#include "Global.hpp"
 #include "flecs.h"
 #include <variant>
 #include "Skeleton.hpp"
@@ -8,7 +8,7 @@
 #include "AnimationClip.hpp"
 #include "AnimationBone.hpp"
 #include "LocalTransform.hpp"
-#include "time.hpp"
+#include "Time.hpp"
 #include "Transform.hpp"
 #include "NodeChildren.hpp"
 #include "SkeletonInstance.hpp"

@@ -1,11 +1,11 @@
-#include "image.hpp"
-#include "physicalDevice.hpp"
-#include "device.hpp"
-#include "allocator.hpp"
-#include "command.hpp"
-#include "mutex.hpp"
-#include "buffer.hpp"
-#include "queue.hpp"
+#include "Image.hpp"
+#include "PhysicalDevice.hpp"
+#include "Device.hpp"
+#include "Allocator.hpp"
+#include "Command.hpp"
+#include "Mutex.hpp"
+#include "Buffer.hpp"
+#include "Queue.hpp"
 
 namespace Rx
 {

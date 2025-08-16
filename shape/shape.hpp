@@ -1,7 +1,7 @@
 #pragma once
 
-#include "global.hpp"
-#include "vertex.hpp"
+#include "Global.hpp"
+#include "Vertex.hpp"
 #define PI 3.14159265359
 
 namespace Rx{

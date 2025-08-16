@@ -1,4 +1,4 @@
-#include "gameWorld.hpp"
+#include "GameWorld.hpp"
 
 namespace Rx{
         GameWorld::GameWorld(Application& app, flecs::world& world): GameWorldBase(app, world) {
