@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Global.hpp"
-#include "Flecs.h"
+#include "flecs.h"
 #include "SkeletonMeshArray.hpp"
 #include "Buffer.hpp"
 

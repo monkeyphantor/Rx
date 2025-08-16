@@ -11,7 +11,7 @@ namespace Rx {
 
             void toVkSkeletonArrayBuffer(VkSkeletonArrayBuffer& arrayBuffer, uint32_t instanceNumber) const {
                 NodeTransform* pTransforms = static_cast<NodeTransform*>(arrayBuffer.buffer.pMemory);
-                std::memcpy(pTransforms + instanceNumber * 256, transforms.data(), transforms.size() * sizeof(NodeTransform));
+                memcpy(pTransforms + instanceNumber * 256, transforms.data(), transforms.size() * sizeof(NodeTransform));
             }
         };
 

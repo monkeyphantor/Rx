@@ -1,14 +1,23 @@
 {
-      // point VS Code at the Windows CMake.exe install
-  "cmake.cmakePath": "C:\\Program Files\\CMake\\bin\\cmake.exe",
-  "cmake.generator": "Visual Studio 17 2022",
-  "cmake.generatorPlatform": "x64",
+  // On Linux, if CMake is in your system's PATH, you often don't need to set this.
+  // If you have a specific installation, you can set the path explicitly, for example: "/usr/bin/cmake".
+  "cmake.cmakePath": "cmake",
+
+  // Use the "Unix Makefiles" generator for GCC on Linux. "Ninja" is another popular alternative.
+  "cmake.generator": "Unix Makefiles",
+
   "cmake.configureSettings": {
-    // optional: hard-code the exact cl.exe if you need
-  "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe",
-  "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/../vcpkg/scripts/buildsystems/vcpkg.cmake",
-  "VCPKG_TARGET_TRIPLET": "x64-windows"
-},
+    // Specify the C and C++ compilers.
+    "CMAKE_C_COMPILER": "/usr/bin/gcc",
+    "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+
+    // The relative path to the vcpkg toolchain file should work on Linux as well.
+    "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/../vcpkg/scripts/buildsystems/vcpkg.cmake",
+
+    // The vcpkg triplet for 64-bit Linux.
+    "VCPKG_TARGET_TRIPLET": "x64-linux"
+  },
+
 "files.associations": {
   "memory": "cpp",
   "mutex": "cpp",

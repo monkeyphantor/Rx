@@ -1,8 +1,8 @@
 #include "VkTextureMeshArray.hpp"
-#include "buffer.hpp"
-#include "mutex.hpp"
-#include "command.hpp"
-#include "queue.hpp"
+#include "Buffer.hpp"
+#include "Mutex.hpp"
+#include "Command.hpp"
+#include "Queue.hpp"
 
 namespace Rx{
     namespace Component{

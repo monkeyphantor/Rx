@@ -12,7 +12,7 @@
         "${workspaceFolder}/converter",
         "${workspaceFolder}/examples/example1",
         "${workspaceFolder}/examples/example2",
-        "${workspaceFolder}/../vcpkg/installed/x64-windows/include"
+        "${workspaceFolder}/../vcpkg/installed/x64-linux/include"
       ],
       "defines": [],
       "cStandard": "c11",

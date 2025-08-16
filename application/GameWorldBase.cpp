@@ -616,7 +616,7 @@ namespace Rx{
                             transformInstances[instanceIndex].transform = transform;
                             transformInstances[instanceIndex].normalTransform = glm::transpose(glm::inverse(transform));
 
-                            std::memcpy(pKeyFrames + instanceIndex * 256, keyFrameBuffers[i].keyFrames.data(), keyFrameBuffers[i].keyFrames.size() * sizeof(Component::VkKeyFrame));
+                            memcpy(pKeyFrames + instanceIndex * 256, keyFrameBuffers[i].keyFrames.data(), keyFrameBuffers[i].keyFrames.size() * sizeof(Component::VkKeyFrame));
 
                             instanceIndex++;
                         }

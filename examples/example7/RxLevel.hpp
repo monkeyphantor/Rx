@@ -91,7 +91,7 @@ struct Actors{
             {
                 auto e = Rx::Asset::createSkeletonModelInstance(world, asset, "Wizard_" + std::to_string(i) + "_" + std::to_string(j));
                 if(!e.is_valid()) {
-                    RX_LOGE("Failed to create Wizard instance entity", std::to_string(i), std::to_string(j));
+                    RX_LOGE("Failed to create Wizard instance entity", std::to_string(i).c_str(), std::to_string(j).c_str());
                 }
                 e.set<Rx::Component::Transform>({ glm::vec3(1.0f), 0.f * 3.14f/2.f, glm::vec3(1.f, 0.f, 0.f), glm::vec3(i * space, 0.f, j * space) });
                 e.set<Rx::Component::AnimationStateMachine>(animStateMachine);
