@@ -337,7 +337,9 @@ namespace Asset{
         const auto& skeleton = asset.get<Rx::Component::Skeleton>();
         instanceEntity.is_a(skeleton.animationPrefab);
 
-        instanceEntity.add<Rx::Component::KeyFrameBuffer>();
+		Rx::Component::KeyFrameBuffer keyFrameBuffer;
+		keyFrameBuffer.keyFrames.resize(skeleton.nodes.size());
+        instanceEntity.set<Rx::Component::KeyFrameBuffer>(keyFrameBuffer);
 
         flecs::entity rootNodeEntity = world.entity((name + "_RootNode").c_str());
         rootNodeEntity.add(world.lookup("IsNodeOfChild"), asset);

@@ -12,9 +12,20 @@
 #include "Transform.hpp"
 #include "NodeChildren.hpp"
 #include "SkeletonInstance.hpp"
+#include <map>
+#include <iostream> // For demonstration output
+
+// Forward-declare AnimationStateMachine to resolve circular dependency in UpdateVisitor
+namespace Rx {
+namespace Component {
+    struct AnimationStateMachine;
+}
+}
+
 namespace Rx {
 namespace Component {
 
+    // --- Animation State Structs (Unchanged) ---
     struct SingleAnimation{
         flecs::entity animation;
         float animationTime;
@@ -27,98 +38,89 @@ namespace Component {
         flecs::entity animation1;
         flecs::entity animation2;
         float blendFactor = 0.0f;
+        
         float animationTime1 = 0.0f;
+        float ticksPerSecond1 = 1.0f;
+        float animationSpeed1 = 1.0f;
+        float duration1 = 1.0f;
+        
         float animationTime2 = 0.0f;
+        float ticksPerSecond2 = 1.0f;
+        float animationSpeed2 = 1.0f;
+        float duration2 = 1.0f;
     };
 
+    struct Transition{
+        std::string fromState;
+        std::string toState;
 
+        float time = 0.0f;
+        float ticksPerSecond = 1.0f;
+        float speed = 1.0f;
+        float duration = 1.0f;
+    };
 
-    struct UpdateVisitor{
+    // --- Update Visitor and Base (Unchanged from previous correct version) ---
+    struct UpdateVisitorBase{
         flecs::entity skeletonInstance;
-        KeyFrameBuffer& keyFrameBuffer;
-
-       
-        // void calculateBoneTransforms(const std::vector<KeyFrame>& keyFrames) {
-        //     std::vector<glm::mat4> transforms(skeleton.nodes.size(), glm::mat4(1.0f));
-        //     std::vector<glm::mat4> nodeTransforms(skeleton.nodes.size(), glm::mat4(1.0f));
-
-        //     for(uint32_t i = 0; i < transforms.size(); i++){
-        //         const Node& node = skeleton.nodes[i];
-        //         if(node.isBone){
-        //             const KeyFrame& keyFrame = keyFrames[node.boneIndex];
-        //             transforms[i] = glm::translate(glm::mat4(1.0f), keyFrame.position) * glm::toMat4(keyFrame.rotation) * glm::scale(glm::mat4(1.0f), keyFrame.scaling);
-        //         }else{
-        //             transforms[i] = node.offset;
-        //         }
-        //     }
-
-        //     nodeTransforms[0] = transforms[0];
-        //     for(uint32_t i = 1; i < transforms.size(); i++){
-        //         const int parentIndex = skeleton.nodes[i].parentIndex;
-        //         nodeTransforms[i] = nodeTransforms[parentIndex] * transforms[i];
-        //     }
-
-        //     for(uint32_t i = 0; i < nodeTransforms.size(); i++){
-        //         const Node& node = skeleton.nodes[i];
-        //         if(node.isBone){
-        //             skeletonBuffer.transforms[i].local = nodeTransforms[i];
-        //             skeletonBuffer.transforms[i].bone = nodeTransforms[i] * node.offset;
-        //         }else{
-        //             skeletonBuffer.transforms[i].local = nodeTransforms[i];
-        //             skeletonBuffer.transforms[i].bone = nodeTransforms[i];
-        //         }
-        //     }
-        // }
         
-        // void calculateBoneTransforms(const std::vector<AnimationBone>& animationBones, uint32_t& nodeIndex, float animationTime, glm::mat4 parentTransform) {
-        //     const Node& node = nodes[nodeIndex];
-        //     glm::mat4 nodeTransform;
-        //     if(node.isBone){
-        //         const AnimationBone& bone = animationBones[node.boneIndex];
-        //         auto [position, rotation, scaling] = bone.getLocalTransform(animationTime);
-        //         nodeTransform = parentTransform * glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scaling);
-        //         skeletonBuffer.transforms[nodeIndex].local = nodeTransform;
-        //         skeletonBuffer.transforms[nodeIndex].bone = nodeTransform * node.offset;
-        //     }else{
-        //         nodeTransform = parentTransform * node.offset;
-        //         skeletonBuffer.transforms[nodeIndex].local = nodeTransform;
-        //         skeletonBuffer.transforms[nodeIndex].bone = nodeTransform;
-        //     }
+        uint32_t getUpperKeyFrameIndex(const std::vector<float>& keyFrameTimes, const float animationTime);
 
-        //     for(uint32_t i = 0; i < node.numberChildren; i++) {
-        //         calculateBoneTransforms(animationBones, ++nodeIndex, animationTime, nodeTransform);
-        //     }
-        // }
+        float getScaleFactor(const float lowerKeyFrameTime, const float upperKeyFrameTime, const float animationTime);
+        
+        std::vector<KeyFrame> interpolateKeyFrames(const std::vector<KeyFrame>& lowerKeyFrames, const std::vector<KeyFrame>& upperKeyFrames, float scaleFactor);
 
-        // void calculateBoneTransforms(const SingleAnimation& animation, uint32_t& nodeIndex, glm::mat4 parentTransform) {
-        //     glm::mat4 nodeTransform;
-        //     flecs::entity nodeEntity = skeletonInstance.nodeEntities[nodeIndex];
-        //     if(nodeEntity.has<Rx::Component::BoneIndex>()) {
-        //         auto& bone = nodeEntity.get_mut<Rx::Component::AnimationBone>(animation.animation);
-                
-        //         auto [position, rotation, scaling] = bone.getLocalTransform(animation.animationTime);
-        //         nodeTransform = parentTransform * glm::translate(glm::mat4(1.0f), position) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scaling);
-        //         skeletonBuffer.transforms[nodeIndex].local = nodeTransform;
-        //         skeletonBuffer.transforms[nodeIndex].bone = nodeTransform * nodeEntity.get<Rx::Component::InvBindPose>().invBindPose;
-        //         nodeEntity.set<Rx::Component::Transform>(modelTransform * Transform::fromGlmMat4(nodeTransform));
-        //     } else {
-        //         nodeTransform = parentTransform * nodeEntity.get<Rx::Component::LocalTransform>().getTransformMatrix();
-        //         skeletonBuffer.transforms[nodeIndex].local = nodeTransform;
-        //         skeletonBuffer.transforms[nodeIndex].bone = nodeTransform;
-        //         nodeEntity.set<Rx::Component::Transform>(modelTransform * Transform::fromGlmMat4(nodeTransform));
-        //     }
-        //     const NodeChildren& nodeChildren = nodeEntity.get<Rx::Component::NodeChildren>();
-        //     for(uint32_t i = 0; i < nodeChildren.numberChildren; i++) {
-        //         calculateBoneTransforms(animation, ++nodeIndex, nodeTransform);
-        //     }
+        
+        std::vector<KeyFrame> getAndUpdatePose(flecs::entity animation, float& animationTime, float ticksPerSecond, float animationSpeed, float duration);
+    };
 
-        //     // nodeEntity.children(world.lookup("IsChildNodeOf"), [&](flecs::entity child) {
-        //     //     calculateBoneTransforms(animation, child, nodeTransform);
-        //     // });
-        // }
+    struct UpdateVisitor : public UpdateVisitorBase {
+        AnimationStateMachine& stateMachine;
 
-        uint32_t getUpperKeyFrameIndex(const std::vector<float>& keyFrameTimes, const float animationTime) {
-            uint32_t keyFrameIndex = keyFrameTimes.size() - 1; // Default to the last keyframe
+        std::vector<KeyFrame> operator()(SingleAnimation& state);
+        std::vector<KeyFrame> operator()(BlendSpace1D& state);
+        std::vector<KeyFrame> operator()(Transition& state);
+
+    private:
+        std::vector<KeyFrame> updateAndGetPose(std::variant<SingleAnimation, BlendSpace1D, Transition>& state);
+
+        std::vector<KeyFrame> handleState(SingleAnimation& state);
+
+        std::vector<KeyFrame> handleState(BlendSpace1D& state);
+
+        std::vector<KeyFrame> handleState(Transition& state);
+    };
+
+    // --- MODIFIED AnimationStateMachine ---
+    struct AnimationStateMachine {
+        std::string currentStateName; // NEW: Track the name of the current state
+        std::variant<
+            SingleAnimation,
+            BlendSpace1D,
+            Transition
+        > currentState;
+
+        std::map<std::string, 
+        std::variant<
+            SingleAnimation,
+            BlendSpace1D,
+            Transition
+        >> animationStates;
+
+        void addAnimationState(const std::string& name, const std::variant<SingleAnimation, BlendSpace1D, Transition>& state);
+
+        void setCurrentState(const std::string& name);
+        
+        // NEW: Smartly triggers a transition from the current state.
+        void triggerTransition(const std::string& transitionName);
+
+        void update(flecs::entity skeletonInstance, KeyFrameBuffer& keyFrameBuffer);
+
+        void convertToVkKeyFrames(const std::vector<KeyFrame>& keyFrames, std::vector<VkKeyFrame>& vkKeyFrames);
+    };
+
+    inline uint32_t UpdateVisitorBase::getUpperKeyFrameIndex(const std::vector<float>& keyFrameTimes, const float animationTime) {
+            uint32_t keyFrameIndex = keyFrameTimes.size() - 1;
             for (uint32_t i = 0; i < keyFrameTimes.size(); i++) {
                 if (animationTime <= keyFrameTimes[i]) {
                     keyFrameIndex = i;
@@ -128,83 +130,130 @@ namespace Component {
             return keyFrameIndex;
         }
 
-        float getScaleFactor(const float lowerKeyFrameTime, const float upperKeyFrameTime, const float animationTime) {
+        inline float UpdateVisitorBase::getScaleFactor(const float lowerKeyFrameTime, const float upperKeyFrameTime, const float animationTime) {
             float scaleFactor = 0.0f;
             float midWayLength = animationTime - lowerKeyFrameTime;
             float framesDiff = upperKeyFrameTime - lowerKeyFrameTime;
             scaleFactor = midWayLength / framesDiff;
             return scaleFactor;
         }
-
-        std::vector<VkKeyFrame> interpolateKeyFrames(const std::vector<KeyFrame>& lowerKeyFrames, const std::vector<KeyFrame>& upperKeyFrames, float scaleFactor) {
-            std::vector<VkKeyFrame> interpolatedKeyFrames;
+        
+        inline std::vector<KeyFrame> UpdateVisitorBase::interpolateKeyFrames(const std::vector<KeyFrame>& lowerKeyFrames, const std::vector<KeyFrame>& upperKeyFrames, float scaleFactor) {
+            std::vector<KeyFrame> interpolatedKeyFrames;
             interpolatedKeyFrames.reserve(lowerKeyFrames.size());
             for (size_t i = 0; i < lowerKeyFrames.size(); ++i) {
-                VkKeyFrame interpolatedKeyFrame;
-                interpolatedKeyFrame.position = glm::vec4(glm::mix(lowerKeyFrames[i].position, upperKeyFrames[i].position, scaleFactor), 1.0f);
-                auto quat = glm::slerp(lowerKeyFrames[i].rotation, upperKeyFrames[i].rotation, scaleFactor);
-                interpolatedKeyFrame.rotation = glm::vec4(quat.x, quat.y, quat.z, quat.w);
-                interpolatedKeyFrame.scaling = glm::vec4(glm::mix(lowerKeyFrames[i].scaling, upperKeyFrames[i].scaling, scaleFactor), 1.0f);
+                KeyFrame interpolatedKeyFrame;
+                interpolatedKeyFrame.position = glm::mix(lowerKeyFrames[i].position, upperKeyFrames[i].position, scaleFactor);
+                interpolatedKeyFrame.rotation = glm::slerp(glm::quat(lowerKeyFrames[i].rotation), glm::quat(upperKeyFrames[i].rotation), scaleFactor);
+                interpolatedKeyFrame.scaling = glm::mix(lowerKeyFrames[i].scaling, upperKeyFrames[i].scaling, scaleFactor);
                 interpolatedKeyFrames.push_back(interpolatedKeyFrame);
             }
             return interpolatedKeyFrames;
         }
 
-        void operator()(SingleAnimation& state) {
-            uint32_t nodeIndex = 0;
-            const auto& animationPrefab = skeletonInstance.get<Rx::Component::AnimationClip>(state.animation);
+        
+        inline std::vector<KeyFrame> UpdateVisitorBase::getAndUpdatePose(flecs::entity animation, float& animationTime, float ticksPerSecond, float animationSpeed, float duration){
+            const auto& animationPrefab = skeletonInstance.get<Rx::Component::AnimationClip>(animation);
             const auto& keyFrameTimes = animationPrefab.keyFrameTimes;
-            uint32_t keyFrameIndex = getUpperKeyFrameIndex(keyFrameTimes, state.animationTime);
-            keyFrameIndex = keyFrameIndex * (keyFrameIndex > 0) + 1 * (keyFrameIndex == 0); // Ensure we have a valid index
+            
+            uint32_t keyFrameIndex = getUpperKeyFrameIndex(keyFrameTimes, animationTime);
+            keyFrameIndex = keyFrameIndex * (keyFrameIndex > 0) + 1 * (keyFrameIndex == 0);
 
             const auto& upperKeyFrames = animationPrefab.keyFrames[keyFrameIndex];
             const auto& lowerKeyFrames = animationPrefab.keyFrames[keyFrameIndex - 1];
 
-            float scaleFactor = getScaleFactor(keyFrameTimes[keyFrameIndex - 1], keyFrameTimes[keyFrameIndex], state.animationTime);
-            keyFrameBuffer.keyFrames = interpolateKeyFrames(lowerKeyFrames, upperKeyFrames, scaleFactor);
-            //calculateBoneTransforms(interpolatedKeyFrames);
+            float scaleFactor = getScaleFactor(keyFrameTimes[keyFrameIndex - 1], keyFrameTimes[keyFrameIndex], animationTime);
+            std::vector<KeyFrame> keyFrames = interpolateKeyFrames(lowerKeyFrames, upperKeyFrames, scaleFactor);
             
-            state.animationTime += state.ticksPerSecond * state.animationSpeed * Time::deltaTime;
-            state.animationTime = fmod(state.animationTime, state.duration);
+            animationTime += ticksPerSecond * animationSpeed * Time::deltaTime;
+            animationTime = fmod(animationTime, duration);
+
+            return keyFrames;
         }
 
-        void operator()(BlendSpace1D& state) {
-            // Update logic for BlendSpace1D
-            RX_LOGE("AnimationStateMachine", "BlendSpace1D not implemented yet", "UpdateVisitor");
+        inline std::vector<KeyFrame> UpdateVisitor::operator()(SingleAnimation& state) {
+            return handleState(state);
         }
-    };
-    
-    struct AnimationStateMachine {
-        std::variant<
-            SingleAnimation,
-            BlendSpace1D
-        > currentState;
 
-        std::map<std::string, 
-        std::variant<
-            SingleAnimation,
-            BlendSpace1D
-        >> animationStates;
+        inline std::vector<KeyFrame> UpdateVisitor::operator()(BlendSpace1D& state) {
+            return handleState(state);
+        }
+        inline std::vector<KeyFrame> UpdateVisitor::operator()(Transition& state) {
+            std::vector<KeyFrame> finalPose = handleState(state);
 
-        void addAnimationState(const std::string& name, const std::variant<SingleAnimation, BlendSpace1D>& state) {
+            if (state.time / state.duration >= 1.0f) {
+                // When transition finishes, set current state to the transition's destination
+                stateMachine.setCurrentState(state.toState);
+            }
+
+            return finalPose;
+        }
+        
+        inline std::vector<KeyFrame> UpdateVisitor::updateAndGetPose(std::variant<SingleAnimation, BlendSpace1D, Transition>& state) {
+            return std::visit([this](auto& specificState) -> std::vector<KeyFrame> {
+                return this->handleState(specificState);
+            }, state);
+        }
+
+        inline std::vector<KeyFrame> UpdateVisitor::handleState(SingleAnimation& state) {
+            return getAndUpdatePose(state.animation, state.animationTime, state.ticksPerSecond, state.animationSpeed, state.duration);
+        }
+
+        inline std::vector<KeyFrame> UpdateVisitor::handleState(BlendSpace1D& state) {
+            std::vector<KeyFrame> keyFrames1 = getAndUpdatePose(state.animation1, state.animationTime1, state.ticksPerSecond1, state.animationSpeed1, state.duration1);
+            std::vector<KeyFrame> keyFrames2 = getAndUpdatePose(state.animation2, state.animationTime2, state.ticksPerSecond2, state.animationSpeed2, state.duration2);
+            return interpolateKeyFrames(keyFrames1, keyFrames2, state.blendFactor);
+        }
+
+        inline std::vector<KeyFrame> UpdateVisitor::handleState(Transition& state) {
+            auto& fromStateVariant = stateMachine.animationStates.at(state.fromState);
+            auto& toStateVariant = stateMachine.animationStates.at(state.toState);
+
+            std::vector<KeyFrame> keyFramesFrom = updateAndGetPose(fromStateVariant);
+            std::vector<KeyFrame> keyFramesTo = updateAndGetPose(toStateVariant);
+            
+            float blendFactor = std::min(1.0f, state.time / state.duration);
+            std::vector<KeyFrame> finalKeyFrames = interpolateKeyFrames(keyFramesFrom, keyFramesTo, blendFactor);
+
+            state.time += state.ticksPerSecond * state.speed * Time::deltaTime;
+            return finalKeyFrames;
+        }
+
+        inline void AnimationStateMachine::addAnimationState(const std::string& name, const std::variant<SingleAnimation, BlendSpace1D, Transition>& state) {
             animationStates[name] = state;
         }
 
-        void setCurrentState(const std::string& name) {
+        inline void AnimationStateMachine::setCurrentState(const std::string& name) {
             auto it = animationStates.find(name);
             if (it != animationStates.end()) {
                 currentState = it->second;
+                currentStateName = name; // Keep the name in sync
+                 if (std::holds_alternative<Transition>(currentState)) {
+                    // Reset transition time when setting it directly
+                    std::get<Transition>(currentState).time = 0.0f;
+                }
             } else {
                 RX_LOGE("AnimationStateMachine", "setCurrentState", 
                         ("Animation state '" + name + "' not found").c_str());
             }
         }
 
-        void update(flecs::entity skeletonInstance, KeyFrameBuffer& keyFrameBuffer){
-            std::visit(UpdateVisitor(skeletonInstance, keyFrameBuffer), currentState);
+        inline void AnimationStateMachine::update(flecs::entity skeletonInstance, KeyFrameBuffer& keyFrameBuffer){
+            UpdateVisitor visitor{skeletonInstance, *this};
+            std::vector<KeyFrame> keyFrames = std::visit(visitor, currentState);
+            convertToVkKeyFrames(keyFrames, keyFrameBuffer.keyFrames);
         }
-    };
 
-} // namespace Component
-} // namespace Rx
+        inline void AnimationStateMachine::convertToVkKeyFrames(const std::vector<KeyFrame>& keyFrames, std::vector<VkKeyFrame>& vkKeyFrames) {
+            for (uint32_t i = 0; i < keyFrames.size(); ++i) {
+                const KeyFrame& keyFrame = keyFrames[i];
+                VkKeyFrame vkKeyFrame;
+                vkKeyFrame.position = glm::vec4(keyFrame.position, 1.0f);
+                vkKeyFrame.rotation = glm::vec4(keyFrame.rotation.x, keyFrame.rotation.y, keyFrame.rotation.z, keyFrame.rotation.w);
+                vkKeyFrame.scaling = glm::vec4(keyFrame.scaling, 1.0f);
+                vkKeyFrames[i] = vkKeyFrame;
+            }
+        }
 
+}
+}
