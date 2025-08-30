@@ -129,7 +129,7 @@ public:
 
         case Layers::PLAYER_BODY:
             // Player collides with environment, enemies, enemy spells, destructibles, and loot
-            return inLayer2 == Layers::STATIC_ENVIRONMENT || inLayer2 == Layers::ENEMY_BODY || inLayer2 == Layers::ENEMY_SPELL || inLayer2 == Layers::DESTRUCTIBLE || inLayer2 == Layers::LOOT_PICKUP;
+            return inLayer2 == Layers::STATIC_ENVIRONMENT || inLayer2 == Layers::DYNAMIC_ENVIRONMENT || inLayer2 == Layers::ENEMY_BODY || inLayer2 == Layers::ENEMY_SPELL || inLayer2 == Layers::DESTRUCTIBLE || inLayer2 == Layers::LOOT_PICKUP;
         
         case Layers::ENEMY_BODY:
             // Enemy collides with environment, player, player spells, and destructibles

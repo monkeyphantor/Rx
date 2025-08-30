@@ -20,8 +20,8 @@ namespace Rx
 
         glm::mat4 createViewMatrix(const glm::vec3& cameraPosition, const glm::vec3& cameraDirection, const glm::vec3& upDirection)
         {
-            glm::vec3 cameraRight = glm::cross(upDirection, cameraDirection);
-            glm::vec3 cameraUp = glm::cross(cameraRight, cameraDirection);
+           glm::vec3 cameraRight = glm::normalize(glm::cross(upDirection, cameraDirection));
+            glm::vec3 cameraUp = glm::normalize(glm::cross(cameraRight, cameraDirection));
 
             glm::mat4 viewMatrix(1.0f);
             viewMatrix[0][0] = cameraRight.x;
@@ -80,7 +80,6 @@ namespace Rx
         void updateEye(glm::vec3 position, glm::vec3 direction, float fov, float nearClip, float farClip)
         {
             Eye _eye;
-
             _eye.position = glm::vec4(position, 1.0f);
             _eye.direction = glm::vec4(direction, 0.0f);
             _eye.projView = createProjectionMatrix(fov,static_cast<float>(windowWidth)/static_cast<float>(windowHeight),nearClip, farClip);

@@ -30,6 +30,7 @@
 #include "AnimationMap.hpp"
 #include "Skeleton.hpp"
 #include "AnimationClip.hpp"
+#include "MeshTransform.hpp"
 
 struct Actors;
 class RxLevel : public Rx::Level
@@ -79,9 +80,9 @@ struct Actors{
 
         auto animationPrefab = asset.get<Rx::Component::Skeleton>().animationPrefab;
         auto& map = animationPrefab.get<Rx::Component::AnimationMap>().animations;
-        auto& animClip = animationPrefab.get<Rx::Component::AnimationClip>(map.at("Run"));
+        auto* pAnimClip = map.at("Run").get();
         Rx::Component::AnimationStateMachine animStateMachine;
-        animStateMachine.addAnimationState("Run", Rx::Component::SingleAnimation{map.at("Run"), 0.0f, 1.f, animClip.duration, animClip.ticksPerSecond});
+        animStateMachine.addAnimationState("Run", Rx::Component::SingleAnimation{pAnimClip, 0.0f, 1.0f, pAnimClip->duration, pAnimClip->ticksPerSecond});
         animStateMachine.setCurrentState("Run");
 
         float space = 4.f;
@@ -94,6 +95,7 @@ struct Actors{
                     RX_LOGE("Failed to create Wizard instance entity", std::to_string(i).c_str(), std::to_string(j).c_str());
                 }
                 e.set<Rx::Component::Transform>({ glm::vec3(1.0f), 0.f * 3.14f/2.f, glm::vec3(1.f, 0.f, 0.f), glm::vec3(i * space, 0.f, j * space) });
+                e.set<Rx::Component::MeshTransform>({ glm::vec3(1.0f), 0.f*3.14f, glm::vec3(0.f, 1.f, 0.f), glm::vec3(0.f, 0.f, 0.f) });
                 e.set<Rx::Component::AnimationStateMachine>(animStateMachine);
                 e.add<LevelAsset>();
             }

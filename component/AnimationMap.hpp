@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Global.hpp"
-#include "flecs.h"
-
+#include "AnimationClip.hpp"
 namespace Rx{
     namespace Component{
         struct AnimationMap {
-            std::unordered_map<std::string, flecs::entity> animations;
+            std::map<std::string, std::shared_ptr<AnimationClip>> animations;
+            std::map<std::string, uint32_t> boneIndices;
         };
     }
 }

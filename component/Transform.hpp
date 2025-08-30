@@ -88,6 +88,12 @@ namespace Rx
 
                 return transform;
             }
+
+            glm::vec3 forward() const
+            {
+                glm::quat q = toRotation();
+                return q * glm::vec3(0, 0, -1);
+            }
         };
     }
 }

@@ -29,10 +29,18 @@ namespace Rx
             keyX.pressed = (keyX.down && keyX.lastPressed > keyPressTime);
             keyX.lastPressed = (keyX.lastPressed + Time::deltaTime) * !keyX.pressed;
 
+            keySpace.down = (glfwGetKey(Core::pGLFWwindow, GLFW_KEY_SPACE) == GLFW_PRESS);
+            keySpace.pressed = (keySpace.down && keySpace.lastPressed > keyPressTime);
+            keySpace.lastPressed = (keySpace.lastPressed + Time::deltaTime) * !keySpace.pressed;
+
             keyEsc.down = (glfwGetKey(Core::pGLFWwindow, GLFW_KEY_ESCAPE) == GLFW_PRESS);
             keyEsc.pressed = (keyEsc.down && keyEsc.lastPressed > keyPressTime);
             keyEsc.lastPressed = (keyEsc.lastPressed + Time::deltaTime) * !keyEsc.pressed;
-     
+
+            keyShift.down = (glfwGetKey(Core::pGLFWwindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS);
+            keyShift.pressed = (keyShift.down && keyShift.lastPressed > keyPressTime);
+            keyShift.lastPressed = (keyShift.lastPressed + Time::deltaTime) * !keyShift.pressed;
+
         }
 
         void updateButtons()

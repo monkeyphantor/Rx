@@ -25,9 +25,9 @@ namespace Component {
 namespace Rx {
 namespace Component {
 
-    // --- Animation State Structs (Unchanged) ---
+
     struct SingleAnimation{
-        flecs::entity animation;
+        AnimationClip* animation;
         float animationTime;
         float animationSpeed;
         float duration;
@@ -35,19 +35,53 @@ namespace Component {
     };
 
     struct BlendSpace1D{
-        flecs::entity animation1;
-        flecs::entity animation2;
+        AnimationClip* animations[5];
+        uint32_t numberAnimationPoints = 0;
+        float animationPoints[5] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+        int8_t nearestPointsIndices[2];
+        float animationPointState = 0.0f;
         float blendFactor = 0.0f;
-        
-        float animationTime1 = 0.0f;
-        float ticksPerSecond1 = 1.0f;
-        float animationSpeed1 = 1.0f;
-        float duration1 = 1.0f;
-        
-        float animationTime2 = 0.0f;
-        float ticksPerSecond2 = 1.0f;
-        float animationSpeed2 = 1.0f;
-        float duration2 = 1.0f;
+
+        float animationTime = 0.f;
+        float ticksPerSecond[5] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        float animationSpeed[5] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        float duration[5] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+
+
+        void calculateNearestAnimationPoints(){
+            // Find the two animationPoints closest to blendFactor
+            float minDist1 = std::numeric_limits<float>::max();
+            float minDist2 = std::numeric_limits<float>::max();
+            int idx1 = -1, idx2 = -1;
+
+            for (int i = 0; i < numberAnimationPoints; ++i) {
+                float dist = std::abs(animationPoints[i] - animationPointState);
+                if (dist < minDist1) {
+                    minDist2 = minDist1;
+                    idx2 = idx1;
+                    minDist1 = dist;
+                    idx1 = i;
+                } else if (dist < minDist2) {
+                    minDist2 = dist;
+                    idx2 = i;
+                }
+            }
+            // Ensure idx1 < idx2 for consistency
+            if (idx1 > idx2) std::swap(idx1, idx2);
+            nearestPointsIndices[0] = static_cast<int8_t>(idx1);
+            nearestPointsIndices[1] = static_cast<int8_t>(idx2);
+        }
+
+        void calculateBlendFactor(){
+            // Calculate blendFactor between the two nearest points
+            float p0 = animationPoints[nearestPointsIndices[0]];
+            float p1 = animationPoints[nearestPointsIndices[1]];
+            if (std::abs(p1 - p0) > 1e-5f) {
+                blendFactor = std::abs(animationPointState - p0) / std::abs(p1 - p0);
+            } else {
+                blendFactor = 0.0f; // Avoid division by zero
+            }
+        }
     };
 
     struct Transition{
@@ -60,7 +94,15 @@ namespace Component {
         float duration = 1.0f;
     };
 
-    // --- Update Visitor and Base (Unchanged from previous correct version) ---
+    struct ActionAnimationBlend{
+        std::string actionState;
+        std::vector<uint32_t> nodeMask;
+        std::string baseState;
+        float time = 0.0f;
+        float blendInDuration = 0.25f;
+        float blendOutDuration = 0.25f;
+    };
+
     struct UpdateVisitorBase{
         flecs::entity skeletonInstance;
         
@@ -71,7 +113,7 @@ namespace Component {
         std::vector<KeyFrame> interpolateKeyFrames(const std::vector<KeyFrame>& lowerKeyFrames, const std::vector<KeyFrame>& upperKeyFrames, float scaleFactor);
 
         
-        std::vector<KeyFrame> getAndUpdatePose(flecs::entity animation, float& animationTime, float ticksPerSecond, float animationSpeed, float duration);
+        std::vector<KeyFrame> getPose(AnimationClip& animation, const float animationTime, const float ticksPerSecond, const float animationSpeed, const float duration);
     };
 
     struct UpdateVisitor : public UpdateVisitorBase {
@@ -80,34 +122,32 @@ namespace Component {
         std::vector<KeyFrame> operator()(SingleAnimation& state);
         std::vector<KeyFrame> operator()(BlendSpace1D& state);
         std::vector<KeyFrame> operator()(Transition& state);
-
+        std::vector<KeyFrame> operator()(ActionAnimationBlend& state);
     private:
-        std::vector<KeyFrame> updateAndGetPose(std::variant<SingleAnimation, BlendSpace1D, Transition>& state);
+        std::vector<KeyFrame> getAndUpdatePoseVariant(std::variant<SingleAnimation, BlendSpace1D, Transition, ActionAnimationBlend>& state);
 
         std::vector<KeyFrame> handleState(SingleAnimation& state);
 
         std::vector<KeyFrame> handleState(BlendSpace1D& state);
 
         std::vector<KeyFrame> handleState(Transition& state);
+
+        std::vector<KeyFrame> handleState(ActionAnimationBlend& state);
     };
 
-    // --- MODIFIED AnimationStateMachine ---
-    struct AnimationStateMachine {
-        std::string currentStateName; // NEW: Track the name of the current state
-        std::variant<
-            SingleAnimation,
-            BlendSpace1D,
-            Transition
-        > currentState;
 
+    struct AnimationStateMachine {
+        std::string currentStateName; 
+        
         std::map<std::string, 
         std::variant<
             SingleAnimation,
             BlendSpace1D,
-            Transition
+            Transition,
+            ActionAnimationBlend
         >> animationStates;
 
-        void addAnimationState(const std::string& name, const std::variant<SingleAnimation, BlendSpace1D, Transition>& state);
+        void addAnimationState(const std::string& name, const std::variant<SingleAnimation, BlendSpace1D, Transition, ActionAnimationBlend>& state);
 
         void setCurrentState(const std::string& name);
         
@@ -152,21 +192,19 @@ namespace Component {
         }
 
         
-        inline std::vector<KeyFrame> UpdateVisitorBase::getAndUpdatePose(flecs::entity animation, float& animationTime, float ticksPerSecond, float animationSpeed, float duration){
-            const auto& animationPrefab = skeletonInstance.get<Rx::Component::AnimationClip>(animation);
-            const auto& keyFrameTimes = animationPrefab.keyFrameTimes;
-            
+        inline std::vector<KeyFrame> UpdateVisitorBase::getPose(AnimationClip& animation, const float animationTime, const float ticksPerSecond, const float animationSpeed, const float duration){
+            const auto& keyFrameTimes = animation.keyFrameTimes;
             uint32_t keyFrameIndex = getUpperKeyFrameIndex(keyFrameTimes, animationTime);
             keyFrameIndex = keyFrameIndex * (keyFrameIndex > 0) + 1 * (keyFrameIndex == 0);
 
-            const auto& upperKeyFrames = animationPrefab.keyFrames[keyFrameIndex];
-            const auto& lowerKeyFrames = animationPrefab.keyFrames[keyFrameIndex - 1];
+            const auto& upperKeyFrames = animation.keyFrames[keyFrameIndex];
+            const auto& lowerKeyFrames = animation.keyFrames[keyFrameIndex - 1];
 
             float scaleFactor = getScaleFactor(keyFrameTimes[keyFrameIndex - 1], keyFrameTimes[keyFrameIndex], animationTime);
             std::vector<KeyFrame> keyFrames = interpolateKeyFrames(lowerKeyFrames, upperKeyFrames, scaleFactor);
             
-            animationTime += ticksPerSecond * animationSpeed * Time::deltaTime;
-            animationTime = fmod(animationTime, duration);
+            // animationTime += ticksPerSecond * animationSpeed * Time::deltaTime;
+            // animationTime = fmod(animationTime, duration);
 
             return keyFrames;
         }
@@ -188,29 +226,68 @@ namespace Component {
 
             return finalPose;
         }
-        
-        inline std::vector<KeyFrame> UpdateVisitor::updateAndGetPose(std::variant<SingleAnimation, BlendSpace1D, Transition>& state) {
+
+        inline std::vector<KeyFrame> UpdateVisitor::operator()(ActionAnimationBlend& state) {
+            std::vector<KeyFrame> finalePose = handleState(state);
+
+            auto& stateActionVariant = stateMachine.animationStates.at(state.actionState);
+            if(auto* pSingleAnimation = std::get_if<SingleAnimation>(&stateActionVariant)){
+                if(pSingleAnimation->animationTime >= pSingleAnimation->duration){
+                    pSingleAnimation->animationTime = 0.0f; // Reset action animation time
+                    stateMachine.setCurrentState(state.baseState);
+                    state.time = 0.0f; // Reset blend time
+                }
+            }else{
+                RX_LOGE("UpdateVisitor", "operator(ActionAnimationBlend)", "state.actionState only implemented for SingleAnimation");
+            }
+            return finalePose;
+        }
+
+        inline std::vector<KeyFrame> UpdateVisitor::getAndUpdatePoseVariant(std::variant<SingleAnimation, BlendSpace1D, Transition, ActionAnimationBlend>& state) {
             return std::visit([this](auto& specificState) -> std::vector<KeyFrame> {
                 return this->handleState(specificState);
             }, state);
         }
 
         inline std::vector<KeyFrame> UpdateVisitor::handleState(SingleAnimation& state) {
-            return getAndUpdatePose(state.animation, state.animationTime, state.ticksPerSecond, state.animationSpeed, state.duration);
+            std::vector<KeyFrame> keyFrames =  getPose(*state.animation, state.animationTime, state.ticksPerSecond, state.animationSpeed, state.duration);
+            state.animationTime += state.ticksPerSecond * state.animationSpeed * Time::deltaTime;
+            //state.animationTime = fmod(state.animationTime, state.duration);
+            return keyFrames;
         }
 
-        inline std::vector<KeyFrame> UpdateVisitor::handleState(BlendSpace1D& state) {
-            std::vector<KeyFrame> keyFrames1 = getAndUpdatePose(state.animation1, state.animationTime1, state.ticksPerSecond1, state.animationSpeed1, state.duration1);
-            std::vector<KeyFrame> keyFrames2 = getAndUpdatePose(state.animation2, state.animationTime2, state.ticksPerSecond2, state.animationSpeed2, state.duration2);
-            return interpolateKeyFrames(keyFrames1, keyFrames2, state.blendFactor);
+        inline std::vector<KeyFrame> UpdateVisitor::handleState(BlendSpace1D& state) {            
+            state.calculateNearestAnimationPoints();
+            state.calculateBlendFactor();
+            std::vector<KeyFrame> keyFrames1 = 
+            getPose
+            (*state.animations[state.nearestPointsIndices[0]], state.animationTime * state.duration[state.nearestPointsIndices[0]], 
+            state.ticksPerSecond[state.nearestPointsIndices[0]], state.animationSpeed[state.nearestPointsIndices[0]], 
+            state.duration[state.nearestPointsIndices[0]]);
+            std::vector<KeyFrame> keyFrames2 = 
+            getPose
+            (*state.animations[state.nearestPointsIndices[1]], state.animationTime * state.duration[state.nearestPointsIndices[1]], 
+            state.ticksPerSecond[state.nearestPointsIndices[1]], state.animationSpeed[state.nearestPointsIndices[1]],
+            state.duration[state.nearestPointsIndices[1]]);
+
+            auto keyFrames =  interpolateKeyFrames(keyFrames1, keyFrames2, state.blendFactor);
+
+            float durationInSecondState1 = state.duration[state.nearestPointsIndices[0]] / (state.ticksPerSecond[state.nearestPointsIndices[0]] * state.animationSpeed[state.nearestPointsIndices[0]]);
+            float durationInSecondState2 = state.duration[state.nearestPointsIndices[1]] / (state.ticksPerSecond[state.nearestPointsIndices[1]] * state.animationSpeed[state.nearestPointsIndices[1]]);
+
+            float blendedTime =  durationInSecondState1 * (1.0f - state.blendFactor) + durationInSecondState2 * state.blendFactor;
+            state.animationTime = fmod(state.animationTime + Time::deltaTime/blendedTime, 1.f);
+
+
+            return keyFrames;
         }
 
         inline std::vector<KeyFrame> UpdateVisitor::handleState(Transition& state) {
             auto& fromStateVariant = stateMachine.animationStates.at(state.fromState);
             auto& toStateVariant = stateMachine.animationStates.at(state.toState);
 
-            std::vector<KeyFrame> keyFramesFrom = updateAndGetPose(fromStateVariant);
-            std::vector<KeyFrame> keyFramesTo = updateAndGetPose(toStateVariant);
+            std::vector<KeyFrame> keyFramesFrom = getAndUpdatePoseVariant(fromStateVariant);
+            std::vector<KeyFrame> keyFramesTo = getAndUpdatePoseVariant(toStateVariant);
             
             float blendFactor = std::min(1.0f, state.time / state.duration);
             std::vector<KeyFrame> finalKeyFrames = interpolateKeyFrames(keyFramesFrom, keyFramesTo, blendFactor);
@@ -219,18 +296,67 @@ namespace Component {
             return finalKeyFrames;
         }
 
-        inline void AnimationStateMachine::addAnimationState(const std::string& name, const std::variant<SingleAnimation, BlendSpace1D, Transition>& state) {
+        inline std::vector<KeyFrame> UpdateVisitor::handleState(ActionAnimationBlend& state){
+            auto& stateActionVariant = stateMachine.animationStates.at(state.actionState);
+            auto& stateBaseVariant = stateMachine.animationStates.at(state.baseState);
+
+            // This assumes the action is a SingleAnimation to get its duration.
+            float actionDuration = 0.0f;
+            if(auto* pSingleAnimation = std::get_if<SingleAnimation>(&stateActionVariant)){
+                actionDuration = pSingleAnimation->duration / pSingleAnimation->ticksPerSecond;
+            }else{
+                RX_LOGE("UpdateVisitor", "handleState", "Action state is not a SingleAnimation");
+            }
+
+           // Calculate blend factor
+            float blendFactor = 0.0f;
+            if (state.time < state.blendInDuration) {
+                // Blend In
+                blendFactor = state.time / state.blendInDuration;
+            }
+            else if (actionDuration > 0 && state.time > actionDuration - state.blendOutDuration) {
+                // Blend Out
+                float timeInBlendOut = state.time - (actionDuration - state.blendOutDuration);
+                blendFactor = 1.0f - (timeInBlendOut / state.blendOutDuration);
+            }
+            else {
+                // Fully blended
+                blendFactor = 1.0f;
+            }
+            blendFactor = glm::clamp(blendFactor, 0.0f, 1.0f);
+
+            std::vector<KeyFrame> keyFramesAction = getAndUpdatePoseVariant(stateActionVariant);
+            std::vector<KeyFrame> keyFramesBase = getAndUpdatePoseVariant(stateBaseVariant);
+
+            // Start with the base pose
+            std::vector<KeyFrame> finalKeyFrames = keyFramesBase;
+
+            // Blend only the masked nodes
+            for (const auto& nodeIndex : state.nodeMask) {
+                const KeyFrame& baseKeyFrame = keyFramesBase[nodeIndex];
+                const KeyFrame& actionKeyFrame = keyFramesAction[nodeIndex];
+                KeyFrame& finalKeyFrame = finalKeyFrames[nodeIndex];
+
+                finalKeyFrame.position = glm::mix(baseKeyFrame.position, actionKeyFrame.position, blendFactor);
+                finalKeyFrame.rotation = glm::slerp(baseKeyFrame.rotation, actionKeyFrame.rotation, blendFactor);
+                finalKeyFrame.scaling = glm::mix(baseKeyFrame.scaling, actionKeyFrame.scaling, blendFactor);
+            }
+
+            state.time += Time::deltaTime;
+            return finalKeyFrames;
+        }
+
+        inline void AnimationStateMachine::addAnimationState(const std::string& name, const std::variant<SingleAnimation, BlendSpace1D, Transition, ActionAnimationBlend>& state) {
             animationStates[name] = state;
         }
 
         inline void AnimationStateMachine::setCurrentState(const std::string& name) {
             auto it = animationStates.find(name);
             if (it != animationStates.end()) {
-                currentState = it->second;
                 currentStateName = name; // Keep the name in sync
-                 if (std::holds_alternative<Transition>(currentState)) {
+                if (std::holds_alternative<Transition>(it->second)) {
                     // Reset transition time when setting it directly
-                    std::get<Transition>(currentState).time = 0.0f;
+                    std::get<Transition>(it->second).time = 0.0f;
                 }
             } else {
                 RX_LOGE("AnimationStateMachine", "setCurrentState", 
@@ -240,7 +366,7 @@ namespace Component {
 
         inline void AnimationStateMachine::update(flecs::entity skeletonInstance, KeyFrameBuffer& keyFrameBuffer){
             UpdateVisitor visitor{skeletonInstance, *this};
-            std::vector<KeyFrame> keyFrames = std::visit(visitor, currentState);
+            std::vector<KeyFrame> keyFrames = std::visit(visitor, animationStates.at(currentStateName));
             convertToVkKeyFrames(keyFrames, keyFrameBuffer.keyFrames);
         }
 

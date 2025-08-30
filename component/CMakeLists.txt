@@ -67,6 +67,12 @@ VkKeyFrameArrayBuffer.hpp
 VkKeyFrameArrayBuffer.cpp
 VkSkeletonModelCompDescriptorSet.hpp
 VkSkeletonModelCompDescriptorSet.cpp
+CharacterCapsule.hpp
+CharacterCapsule.cpp
+CharacterController.hpp
+CharacterController.cpp
+CharacterCamera.hpp
+CharacterCamera.cpp
 )
 
 target_include_directories(rx_component PUBLIC ../core ../flecs)

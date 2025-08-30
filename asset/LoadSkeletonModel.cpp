@@ -271,23 +271,23 @@ namespace Asset{
 
         flecs::entity animationPrefab = world.prefab((assetName + "_Animation").c_str());
 
+
         Rx::Component::AnimationMap map;
-        std::vector<flecs::entity> animationClipEntities;
         for(uint32_t i = 0; i < header.numberAnimations; i++){
-            flecs::entity animationClipEntity = world.entity((assetName + "_AnimationClip_" + animationHeaders[i].name).c_str());
-            Component::AnimationClip animationClip;
-            animationClip.duration = animationHeaders[i].duration;
-            animationClip.ticksPerSecond = animationHeaders[i].ticksPerSecond;
-            animationClip.durationInSeconds = animationHeaders[i].duration / animationHeaders[i].ticksPerSecond;
+            std::shared_ptr<Component::AnimationClip> animationClip = std::make_shared<Component::AnimationClip>();
+            animationClip->duration = animationHeaders[i].duration;
+            animationClip->ticksPerSecond = animationHeaders[i].ticksPerSecond;
+            animationClip->durationInSeconds = animationHeaders[i].duration / animationHeaders[i].ticksPerSecond;
             std::vector<Component::AnimationBone> animationBones;
             uint32_t nodeIndex = 0;
             createAnimationBones(world, nodes, nodeNames, nodeIndex, i, animationBones, positionKeys, rotationKeys, scalingKeys);
-            createKeyFrames(animationBones, animationClip.keyFrames, animationClip.keyFrameTimes, 0.1f);
-            animationPrefab.set<Rx::Component::AnimationClip>(animationClipEntity, animationClip);
-            animationClipEntities.push_back(animationClipEntity);
-            map.animations[animationHeaders[i].name] = animationClipEntity;
+            createKeyFrames(animationBones, animationClip->keyFrames, animationClip->keyFrameTimes, 0.1f);
+            map.animations[animationHeaders[i].name] = std::move(animationClip);
         }
-        animationPrefab.set<Rx::Component::AnimationMap>({map});
+        for(uint32_t i = 0; i < nodeNames.size(); i++){
+            map.boneIndices[nodeNames[i].name]  = nodes[i].boneIndex;
+        }
+        animationPrefab.set<Rx::Component::AnimationMap>(map);
 
         asset.set<Rx::Component::Skeleton>({nodes, std::vector<Component::VkNode>(), nodeNames,  animationPrefab});
 

@@ -3,6 +3,7 @@
 #include "VkColorModelDescriptorSet.hpp"
 #include "ColorMesh.hpp"
 #include "Transform.hpp"
+#include "MeshTransform.hpp"
 #include "VkInstancedColorModelBuffer.hpp"
 #include "ColorMeshArray.hpp"
 #include "ColorArrayGraphics.hpp"
@@ -29,6 +30,9 @@
 #include "VkSkeletonModelCompDescriptorSet.hpp"
 #include "KeyFrameBuffer.hpp"
 #include "Skeleton.hpp"
+#include "CharacterCapsule.hpp"
+#include "CharacterController.hpp"
+
 namespace Rx{
 
         void GameWorldBase::loadGlobal() {
@@ -230,6 +234,11 @@ namespace Rx{
             world.observer<Rx::Component::VkSkeletonModelCompDescriptorSet>()
             .event(flecs::OnRemove)
             .each(Rx::Component::vkSkeletonModelCompDescriptorSet_component_on_remove);
+
+            world.observer<Rx::Component::AnimationStateMachine, Rx::Component::CharacterController>()
+            .event(flecs::OnAdd)
+            .each(Rx::Component::CharacterController_on_add);
+
         }
 
         void GameWorldBase::registerGraphicsBase(){
@@ -265,6 +274,13 @@ namespace Rx{
             IsRootNodeOf = world.entity("IsRootNodeOf");
             IsChildNodeOf = world.entity("IsChildNodeOf");
             IsNodeOfChild = world.entity("IsNodeOfChild");
+
+            world.system<Component::CharacterController, Component::CharacterCapsule, Component::AnimationStateMachine, Component::Transform>()
+            .each([&](flecs::entity e, Component::CharacterController& cc, Component::CharacterCapsule& capsule, Component::AnimationStateMachine& stateMachine, Component::Transform& tf) {
+
+                cc.update(capsule, stateMachine, tf);
+
+            });
 
             world.system<Component::Transform, Component::PointLight>()
             .kind(postUpdate)
@@ -558,6 +574,7 @@ namespace Rx{
 
              world.system("SkeletonModelUpdate")
             .with<Rx::Component::Transform>()
+            .with<Rx::Component::MeshTransform>()
             .with<Rx::Component::KeyFrameBuffer>()
             .with(IsSkeletonModelInstanceOf, "$parent")
             .with<ShouldBeUpdated>().src("$parent") 
@@ -602,7 +619,8 @@ namespace Rx{
 
 
                         const auto& transforms = it.field<const Rx::Component::Transform>(0);
-                        auto keyFrameBuffers = it.field<Rx::Component::KeyFrameBuffer>(1);
+                        const auto& meshTransforms = it.field<const Rx::Component::MeshTransform>(1);
+                        auto keyFrameBuffers = it.field<Rx::Component::KeyFrameBuffer>(2);
 
                         for (auto i : it) {
                             if (instanceIndex >= transformCapacity) {
@@ -612,7 +630,7 @@ namespace Rx{
                                 RX_LOGE("SkeletonModelUpdate", "System", ("Buffer overflow for parent: " + std::string(parent.name())).c_str());
                             }
 
-                            auto transform = transforms[i].getTransformMatrix();
+                            auto transform = transforms[i].getTransformMatrix() * meshTransforms[i].getTransformMatrix();
                             transformInstances[instanceIndex].transform = transform;
                             transformInstances[instanceIndex].normalTransform = glm::transpose(glm::inverse(transform));
 

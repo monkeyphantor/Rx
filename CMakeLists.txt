@@ -39,6 +39,7 @@ add_subdirectory(./application)
 add_subdirectory(./asset)
 
 add_subdirectory(./converter)
+add_subdirectory(./analyzer)
 
 add_subdirectory(./examples/example1)
 add_subdirectory(./examples/example2)
@@ -47,3 +48,4 @@ add_subdirectory(./examples/example4)
 add_subdirectory(./examples/example5)
 add_subdirectory(./examples/example6)
 add_subdirectory(./examples/example7)
+add_subdirectory(./examples/example8)

@@ -11,6 +11,7 @@
 #include "Velocity.hpp"
 #include "Sensor.hpp"
 #include "Transform.hpp"
+#include "CharacterCapsule.hpp"
 
 namespace Rx{
     PhysicsGameWorld::PhysicsGameWorld(Application& app, flecs::world& world)
@@ -80,6 +81,7 @@ namespace Rx{
         world.component<Rx::Component::DynamicRigidBody>();
         world.component<Rx::Component::BoxCollider>();
         world.component<Rx::Component::PhysicsBody>();
+        world.component<Rx::Component::ContactInfo>();
     }
 
     void PhysicsGameWorld::registerPhysicsObservers() {
@@ -247,10 +249,73 @@ namespace Rx{
         
                 bodyInterface.DestroyBody(pb.bodyID);
             });
+
+         world.observer<Rx::Component::Transform, Rx::Component::CharacterCapsule>()
+            .event(flecs::OnSet)
+            .each([&](flecs::entity e, Rx::Component::Transform& tf, Rx::Component::CharacterCapsule& capsule) {
+
+                auto* pSystem = static_cast<PhysicsGameWorld*>(e.world().get_ctx())->physicsSystem.get();
+
+
+                // 3. Create the character's shape (a capsule)
+                JPH::Ref<JPH::ShapeSettings> shape_settings = new JPH::CapsuleShapeSettings(
+                    capsule.capsuleHeight / 2.0f,
+                    capsule.capsuleRadius
+                );
+
+                // 4. Create the character's settings
+                JPH::CharacterVirtualSettings char_settings;
+                char_settings.mMass = 80.0f; // Mass in kg
+                char_settings.mMaxSlopeAngle = JPH::DegreesToRadians(50.0f); // Max slope the character can walk on
+                char_settings.mShape = shape_settings->Create().Get();
+                char_settings.mInnerBodyShape = shape_settings->Create().Get();
+                char_settings.mInnerBodyLayer = capsule.layer; 
+                char_settings.mMaxStrength = 100.0f;
+                // ... Tweak other settings as needed for a WoW-like feel
+
+                // 5. Create the Jolt CharacterVirtual object and store it in our component
+                JPH::RVec3Arg initial_position(Core::toJoltVec3(tf.translation));
+                JPH::QuatArg initial_rotation(Core::toJoltQuat(glm::angleAxis(tf.angle, tf.axis)));
+                capsule.character = new JPH::CharacterVirtual(
+                    &char_settings,
+                    initial_position,
+                    initial_rotation,
+                    0,
+                    pSystem
+                );
+            });
+
+            world.observer<Rx::Component::CharacterCapsule>()
+            .event(flecs::OnRemove)
+            .each([&](flecs::entity e, Rx::Component::CharacterCapsule& capsule) {
+                if (capsule.character) {
+                    delete capsule.character;
+                    capsule.character = nullptr;
+                }
+            });
     }
 
     void PhysicsGameWorld::registerPhysicsSystems(){
+        world.system<Rx::Component::Transform, Rx::Component::CharacterCapsule>()
+            .each([&](flecs::entity e, Rx::Component::Transform& transform, Rx::Component::CharacterCapsule& capsule) {
 
+                capsule.update();   
+                // Body and shape filters can be default if you don't need special filtering
+                const JPH::BodyFilter body_filter;
+                const JPH::ShapeFilter shape_filter;
+
+                capsule.character->Update(
+                    Time::deltaTime,
+                    physicsSystem->GetGravity(),
+                    physicsSystem->GetDefaultBroadPhaseLayerFilter(capsule.layer),
+                    physicsSystem->GetDefaultLayerFilter(capsule.layer),
+                    body_filter,
+                    shape_filter,
+                    *tempAllocator
+                );
+
+                capsule.updateTransform(transform);
+            });
         world.system("PhysicsUpdate")
             .kind(onPhysicsUpdate)
             .run([&](flecs::iter& it) {
@@ -375,10 +440,12 @@ namespace Rx{
         // Cleanup system
         world.system("CleanupCollisions")
             .kind(flecs::PostFrame)
+            .multi_threaded(false)
             .run([](flecs::iter& it) {
                 while(it.next()){
                     it.world().remove_all<Component::ContactInfo>();
                 }
             });
+
     }
 }

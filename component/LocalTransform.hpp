@@ -8,10 +8,10 @@ namespace Rx
     {
         struct LocalTransform {
 
-            glm::vec3 scale; 
-            float angle; 
-            glm::vec3 axis;
-            glm::vec3 translation;
+            glm::vec3 scale{1.f,1.f,1.f}; 
+            float angle{0.f}; 
+            glm::vec3 axis{0.f,1.f,0.f};
+            glm::vec3 translation{0.f,0.f,0.f};
 
 
             // Decomposes a matrix into scale, rotation, and translation.

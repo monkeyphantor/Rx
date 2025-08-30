@@ -39,7 +39,9 @@ namespace Rx
         inline Key keyS{false, false, 0.f};
         inline Key keyW{false, false, 0.f};
         inline Key keyX{false, false, 0.f};
+        inline Key keySpace{false, false, 0.f};
         inline Key keyEsc{false, false, 0.f};
+        inline Key keyShift{false, false, 0.f};
         inline float buttonPressTime{0.1};
 
         inline Button buttonLeft{false, false, 0.f};

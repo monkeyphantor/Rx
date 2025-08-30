@@ -4,6 +4,8 @@
 
 layout(binding = 0) uniform Eye
 {
+    vec4 position;
+    vec4 direction;
     mat4 projView;
 } eye;
 
