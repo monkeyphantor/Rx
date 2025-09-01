@@ -6,7 +6,7 @@
 #include <Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h>
 #include <Jolt/Core/JobSystemThreadPool.h>
 #include <Jolt/Physics/PhysicsSystem.h>
-
+#include <Jolt/Physics/Character/CharacterVirtual.h>
 namespace Rx{
 
 namespace Layers
@@ -134,12 +134,12 @@ public:
         case Layers::ENEMY_BODY:
             // Enemy collides with environment, player, player spells, and destructibles
             // IMPORTANT: Enemies do NOT collide with other enemies or enemy spells.
-            return inLayer2 == Layers::STATIC_ENVIRONMENT || inLayer2 == Layers::PLAYER_BODY || inLayer2 == Layers::PLAYER_SPELL || inLayer2 == Layers::DESTRUCTIBLE;
+            return inLayer2 == Layers::STATIC_ENVIRONMENT || inLayer2 == Layers::DYNAMIC_ENVIRONMENT || inLayer2 == Layers::PLAYER_BODY || inLayer2 == Layers::ENEMY_BODY || inLayer2 == Layers::PLAYER_SPELL || inLayer2 == Layers::DESTRUCTIBLE;
 
         case Layers::PLAYER_SPELL:
             // Player spells collide with environment, enemies, and destructibles
             // IMPORTANT: They pass through the player and other player spells.
-            return inLayer2 == Layers::STATIC_ENVIRONMENT || inLayer2 == Layers::ENEMY_BODY || inLayer2 == Layers::DESTRUCTIBLE;
+            return inLayer2 == Layers::STATIC_ENVIRONMENT || inLayer2 == Layers::DYNAMIC_ENVIRONMENT || inLayer2 == Layers::ENEMY_BODY || inLayer2 == Layers::DESTRUCTIBLE;
         
         case Layers::ENEMY_SPELL:
             // Enemy spells collide with environment, the player, and destructibles
@@ -239,4 +239,33 @@ public:
         }
     }
 };
+
+class FlecsCharacterContactListener : public JPH::CharacterContactListener {
+private:
+    JPH::PhysicsSystem* pPhysicsSystem;
+public:
+    // We pass a reference to our queue
+    FlecsCharacterContactListener(JPH::PhysicsSystem* physicsSystem) : pPhysicsSystem(physicsSystem) {}
+
+    // We only care about when two bodies start touching.
+    void OnContactAdded(const JPH::CharacterVirtual *inCharacter, const JPH::BodyID &inBodyID2, const JPH::SubShapeID &inSubShapeID2, JPH::RVec3Arg inContactPosition, JPH::Vec3Arg inContactNormal, JPH::CharacterContactSettings &ioSettings) override {
+        // The world space normal, pointing from body 2 to body 1.
+        JPH::Vec3 jolt_normal = inContactNormal;
+
+        // Get the first contact point on the surface of body 2.
+        JPH::Vec3 jolt_point = inContactPosition;
+
+        // We get the flecs::entity_t from the user data we stored earlier.
+        auto e1_id = static_cast<flecs::entity_t>(inCharacter->GetUserData());
+        const JPH::BodyLockInterfaceNoLock& body_interface = pPhysicsSystem->GetBodyLockInterfaceNoLock();
+        auto e2_id = static_cast<flecs::entity_t>(body_interface.TryGetBody(inBodyID2)->GetUserData());
+
+        // We only push if both are valid entities
+        if (e1_id != 0 && e2_id != 0) {
+            Core::collisionQueue.push({e1_id, e2_id, Core::toGlmVec3(jolt_point), Core::toGlmVec3(jolt_normal)});
+        }
+    }
+};
+
+
 }

@@ -150,9 +150,7 @@ namespace Component {
         void addAnimationState(const std::string& name, const std::variant<SingleAnimation, BlendSpace1D, Transition, ActionAnimationBlend>& state);
 
         void setCurrentState(const std::string& name);
-        
-        // NEW: Smartly triggers a transition from the current state.
-        void triggerTransition(const std::string& transitionName);
+        void transitionToState(const std::string& name, float duration = 0.25f);
 
         void update(flecs::entity skeletonInstance, KeyFrameBuffer& keyFrameBuffer);
 
@@ -200,6 +198,9 @@ namespace Component {
             const auto& upperKeyFrames = animation.keyFrames[keyFrameIndex];
             const auto& lowerKeyFrames = animation.keyFrames[keyFrameIndex - 1];
 
+            if(keyFrameTimes[keyFrameIndex] < animationTime){
+                return upperKeyFrames;
+			}
             float scaleFactor = getScaleFactor(keyFrameTimes[keyFrameIndex - 1], keyFrameTimes[keyFrameIndex], animationTime);
             std::vector<KeyFrame> keyFrames = interpolateKeyFrames(lowerKeyFrames, upperKeyFrames, scaleFactor);
             
@@ -381,5 +382,30 @@ namespace Component {
             }
         }
 
+        inline void AnimationStateMachine::transitionToState(const std::string& toStateName, float duration) {
+            if (animationStates.find(toStateName) == animationStates.end()) {
+                RX_LOGE("AnimationStateMachine", "transitionToState", ("Destination state '" + toStateName + "' not found.").c_str());
+                return;
+            }
+
+            // Don't create a transition if we are already in the target state.
+            if (currentStateName == toStateName) {
+                return;
+            }
+
+            // Create a unique name for the new transition state.
+            std::string transitionName = currentStateName + "_to_" + toStateName;
+
+            // Create the new transition state object.
+            Transition newTransition;
+            newTransition.fromState = currentStateName;
+            newTransition.toState = toStateName;
+            newTransition.duration = duration;
+            newTransition.time = 0.0f; // Start the transition from the beginning.
+
+            // Add the new state to the map and set it as the current state.
+            animationStates[transitionName] = newTransition;
+            setCurrentState(transitionName);
+        }
 }
 }

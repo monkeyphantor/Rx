@@ -3,6 +3,7 @@
 #include "FlyingCamera.hpp"
 #include "VkColorMesh.hpp"
 #include "VkColorModelDescriptorSet.hpp"
+#include "Transform.hpp"
 struct Actor;
 namespace Rx {
 

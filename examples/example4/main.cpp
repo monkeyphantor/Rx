@@ -1,7 +1,9 @@
-#include "RxLevel.hpp"
+//#include "RxLevel.hpp"
 #include "Application.hpp"
 #include "RxDefaultLoadingScreen.hpp"
-#include "RxDefaultGameWorld.hpp"
+//#include "RxDefaultGameWorld.hpp"
+#include "GameWorldExample4.hpp"
+#include "Level1.hpp"
 
 using namespace Rx;
 
@@ -16,7 +18,7 @@ int main(){
 
         app
         .addLoadingWorld<Rx::RxDefaultLoadingScreen>()
-        .addGameWorld<Rx::RxDefaultGameWorld, Rx::RxLevel>();
+        .addGameWorld<GameWorldExample4, RxLevel1>();
 
         app.run();
     }

@@ -17,6 +17,10 @@
 #include "Sensor.hpp"
 #include "ContactInfo.hpp"
 #include "Application.hpp"
+#include "VkInstancedColorModelDescriptorSet.hpp"
+#include "VkInstancedColorModelBuffer.hpp"
+#include "VkColorMesh.hpp"
+
 #define random(lower, upper) ((static_cast<float>(rand())/static_cast<float>(RAND_MAX))*((upper)-(lower)) + (lower))
 
 struct Actors;
@@ -46,7 +50,11 @@ struct LevelManager;
 
 
 inline int fireballCounter{0};
-
+struct Health{
+    float value;
+};
+struct Hit{
+  };
 struct CanShootFireball {};
 struct FireballCooldown {
     float time;
@@ -99,6 +107,7 @@ struct Actors {
         floor.set<Rx::Component::BoxCollider>({
             .halfExtent = glm::vec3(300.f, 0.1f, 300.f), // Large enough to cover the floor
         });
+        //floor.set<Health>({ 100.f });
 
         world.system()
             .kind(flecs::PreUpdate)
@@ -108,25 +117,29 @@ struct Actors {
                   }
                 });
 
-    //    for(int i = -5 ; i < 5; i++){
-    //         for(int j = -5; j < 5; j++){
+        for(int i = -20 ; i < 20; i++){
+            for(int j = -20; j < 20; j++){
 
-    //             auto block = world.entity();
-    //             block.add(rel, batchRenderer);
-    //             block.set<Rx::Component::Material>({ glm::vec3(random(0.f,0.5f), random(0.9f,1.f), random(0.9f,1.f)), random(0.1f,0.2f), random(0.1f,0.2f), glm::vec3(0.0f) });
-    //             block.set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, glm::vec3(0.f, 1.f, 0.f), glm::vec3(i * 3.f, 50.f + std::abs(i*j), j * 3.f) });
-    //             block.set<Rx::Component::Velocity>({.velocity = glm::vec3(0.f), .angularVelocity = glm::vec3(0.f)});
-    //             block.set<Rx::Component::DynamicRigidBody>({ 
-    //                 .objectLayer =  Rx::Layers::DYNAMIC_ENVIRONMENT, 
-    //                 .mass = 1.0f,
-    //                 .friction = 0.5f,
-    //                 .restitution = 0.5f
-    //             });
-    //             block.set<Rx::Component::BoxCollider>({
-    //                 .halfExtent = glm::vec3(1.f, 1.f, 1.f),
-    //             });
-    //         }
-    //     }  
+                auto block = world.entity();
+                block.add(rel, batchRenderer);
+                block.set<Rx::Component::Material>({ glm::vec3(random(0.1f,0.9f), random(0.9f,1.f), random(0.1f,0.9f)), random(0.1f,0.1f), random(0.8f,0.9f), glm::vec3(0.0f) });
+                block.set<Rx::Component::Transform>({ glm::vec3(1.f), 0.f, glm::vec3(0.f, 1.f, 0.f), glm::vec3(random(-100.f, 100.f), random(50.f, 100.f), random(-100.f, 100.f)) });
+                block.set<Rx::Component::Velocity>({
+                    .velocity = glm::vec3(random(-5.f, 5.f), random(-5.f, 5.f), random(-5.f, 5.f)),
+                    .angularVelocity = glm::vec3(random(-1.f, 1.f), random(-1.f, 1.f), random(-1.f, 1.f))
+                });
+                block.set<Rx::Component::DynamicRigidBody>({ 
+                    .objectLayer =  Rx::Layers::DYNAMIC_ENVIRONMENT, 
+                    .mass = 1000.0f,
+                    .friction = 1.0f,
+                    .restitution = 0.5f
+                });
+                block.set<Rx::Component::BoxCollider>({
+                    .halfExtent = glm::vec3(1.f, 1.f, 1.f),
+                });
+                block.set<Health>({ 10.f });
+            }
+        }
 
         world.lookup("FlyingCamera")
             .add<CanShootFireball>(); // Give the camera the ability to shoot fireballs
@@ -178,7 +191,97 @@ struct Actors {
             camEntity.set<FireballCooldown>({ 0.5f }); // Set cooldown for 0.5 seconds
          });
 
-          world.system<const Fireball>("FireballImpact")
+         world.system<const Fireball, Rx::Component::ContactInfo, Health>()
+         .term_at(1).second("$parent")
+         .term_at(2).src("$parent")
+         .kind(flecs::PostUpdate)
+         .run([&](flecs::iter& it) {
+                      
+            
+                    while(it.next()){
+
+                        flecs::entity target = it.id(1).second();
+                        auto contactInfos =  it.field<Rx::Component::ContactInfo>(1);
+                        for(auto i : it) {
+                            auto& contact = contactInfos[i];
+                            auto fireball = it.entity(i);
+
+                            const int shard_count = 5;
+                            const float explosion_speed = 40.0f;
+                            const float spread_factor = 0.8f; // How wide the explosion cone is
+
+                            // Define world up vector
+                            const glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f);
+                            
+                            // Calculate the basis vectors for our "upper half circle" fan.
+                            // 'right' is a vector perpendicular to both the impact normal and the world up direction.
+                            glm::vec3 right = glm::cross(world_up, contact.normal);
+                            if (glm::length(right) < 0.001f) {
+                                // Handle case where normal is parallel to world_up (e.g., hitting top of a block)
+                                right = glm::vec3(1.0f, 0.0f, 0.0f);
+                            }
+                            right = glm::normalize(right);
+
+                            // 'fan_up' is a vector perpendicular to the normal and our new 'right' vector.
+                            // This gives us an "up" direction for the fan that is oriented with the surface.
+                            glm::vec3 fan_up = glm::normalize(glm::cross(contact.normal, right));
+                            
+                            // Spawn the shards
+                            for (int i = 0; i < shard_count; ++i) {
+                                // Calculate the angle for this shard in the half-circle (0 to PI radians)
+                                float angle = (static_cast<float>(i) / (shard_count - 1)) * 3.14159f;
+
+                                // Create a direction vector in the fan plane
+                                glm::vec3 spread_direction = (cos(angle) * right + sin(angle) * fan_up) * spread_factor;
+
+                                // The final velocity is a combination of the outward normal and the spread direction.
+                                // This creates a cone-like explosion pointing away from the surface.
+                                glm::vec3 shard_velocity = glm::normalize(contact.normal + spread_direction) * explosion_speed;
+
+                                auto rel = fireball.world().lookup("InstancedColorMeshRelation");
+                                auto batchRenderer = fireball.world().lookup("Actors::InstancedRender");
+
+                                // Create the shard entity
+                                auto shard = world.entity();
+                                shard.add(rel, batchRenderer);
+                                shard.set<Rx::Component::Transform>({
+                                    glm::vec3(1.0f), // Scale
+                                    0.f, glm::vec3(0,1,0), // Rotation
+                                    contact.position-glm::normalize(shard_velocity)*4.f // Position: Spawn at the impact point
+                                });
+                                shard.set<Rx::Component::Material>({ glm::vec3(random(0.f,0.5f), random(0.9f,1.f), random(0.9f,1.f)), 0.8f, 0.1f, glm::vec3(0.0f) });
+                                shard.set<Rx::Component::DynamicRigidBody>({
+                                    .objectLayer = Rx::Layers::DYNAMIC_ENVIRONMENT,
+                                    .mass = 0.1f,
+                                    .friction = 0.5f,
+                                    .restitution = 0.4f
+                                });
+                                shard.set<Rx::Component::BoxCollider>({
+                                    .halfExtent = glm::vec3(0.2f)
+                                });
+                                // THIS IS THE KEY: Give the new shard its calculated velocity
+                                shard.set<Rx::Component::Velocity>({ -shard_velocity });
+
+                            }
+
+                            fireball.destruct();
+
+                        }
+
+                       target.add<Hit>();
+                    }
+                  });
+
+
+        world.system<Hit>()
+        .each([&](flecs::entity e, const Hit& hit) {
+            world.defer_begin();
+            e.destruct();
+			world.defer_end();
+        });
+
+
+         /*world.system<const Fireball>("FireballImpact")
              .kind(flecs::PostUpdate) // Run after all physics updates
               // This system captures the world and render entities to be able to spawn new objects
               .each([&](flecs::entity fireball, const Fireball&) {
@@ -258,7 +361,7 @@ struct Actors {
 
                   });
 
-              });
+              });*/
     }
 };
 

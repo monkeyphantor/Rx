@@ -1,17 +1,17 @@
-#include "CharacterController.hpp"
+#include "NpcController.hpp"
 #include "AnimationMap.hpp"
 #include "AnimationClip.hpp"
 #include "Input.hpp"
 
 namespace Rx::Component
 {
-    void CharacterController_on_add(flecs::entity e, AnimationStateMachine& animationStateMachine, CharacterController& controller)
+    void NpcController_on_add(flecs::entity e, AnimationStateMachine& animationStateMachine, NpcController& controller)
     {
         controller.initASM(e, animationStateMachine);
     }
 
 
-    void CharacterController::initASM(flecs::entity e, AnimationStateMachine& stateMachine)
+    void NpcController::initASM(flecs::entity e, AnimationStateMachine& stateMachine)
     {
         auto& animationMap = e.get<Rx::Component::AnimationMap>();
         auto& animations = animationMap.animations;
@@ -81,49 +81,77 @@ namespace Rx::Component
             Rx::Component::SingleAnimation
             {.animation = pAnimClipDeath,
             .animationTime = 0.0f,
-            .animationSpeed = 1.f,
+            .animationSpeed = 1.0f,
             .duration = pAnimClipDeath->duration,
             .ticksPerSecond = pAnimClipDeath->ticksPerSecond}
         );
 
     }
     
-    void CharacterController::update(CharacterCapsule& capsule, AnimationStateMachine& stateMachine, Transform& transform)
+    void NpcController::update(CharacterCapsule& capsule, AnimationStateMachine& stateMachine, Transform& transform, Transform& playerTransform, FireballNpcLauncher& fireballLauncher)
     {
-        if(Input::keyA.down){
-            capsule.turn(Time::deltaTime);
-        }
-        if(Input::keyD.down){
-            capsule.turn(-Time::deltaTime);
+       // AI parameters
+        const float attackRange = 15.0f;
+        const float followRange = 20.0f;
+        const float stopDistance = 2.0f;
+
+        // Calculate direction and distance to the player on the horizontal plane
+        glm::vec3 directionToPlayer = playerTransform.translation - transform.translation;
+        directionToPlayer.y = 0; // We only care about horizontal distance and direction
+        float distanceToPlayer = glm::length(directionToPlayer);
+
+        // Normalize the direction vector
+        if (distanceToPlayer > 0.01f) {
+            directionToPlayer = glm::normalize(directionToPlayer);
         }
 
-        if(Input::keyW.down){
-            capsule.isRunning = Input::keyShift.down;
-            if(!capsule.isRunning && capsule.moveSpeed > capsule.maxWalkSpeed){
-                capsule.decrSpeed();
-            }else{
-                capsule.incrSpeed();
-            }
-        }else{
+        // Don't do anything if dead or dying
+        const std::string& currentState = stateMachine.currentStateName;
+        if (currentState == "Death" || currentState.find("_to_Death") != std::string::npos) {
+            capsule.decrSpeed();
+            capsule.move({0,0,0});
+            return;
+        }
+
+        // --- ATTACK LOGIC ---
+        // If in attack range and not already attacking, start an attack
+        if (distanceToPlayer <= attackRange && stateMachine.currentStateName != "Attack") {
+            stateMachine.setCurrentState("Attack");
+            fireballLauncher.shouldShoot = true; // Signal to shoot a fireball
+        }
+
+        // --- TURNING LOGIC ---
+        // Only turn if not in the middle of an attack
+        glm::vec3 currentForward = transform.forward();
+        float dot = glm::dot(currentForward, directionToPlayer);
+
+        // Check if we need to turn (if we're not already facing the player)
+        if (dot < 0.99f) {
+            glm::vec3 cross = glm::cross(currentForward, directionToPlayer);
+            float turnDirection = (cross.y < 0) ? -1.0f : 1.0f;
+            capsule.turn(turnDirection * Time::deltaTime);
+        }
+    
+        // --- MOVEMENT LOGIC ---
+        // Move if outside the stopping distance but inside the follow range, and not attacking
+        if (distanceToPlayer > stopDistance && distanceToPlayer < followRange && stateMachine.currentStateName != "Attack") {
+            capsule.isRunning = true;
+            capsule.incrSpeed();
+            capsule.move(transform.forward());
+        } else {
+            // Otherwise, stop moving
             capsule.isRunning = false;
             capsule.decrSpeed();
+            // Call move with forward, but speed will be 0 or decreasing
+            capsule.move(transform.forward());
         }
 
-        capsule.move(transform.forward());
-
-        if(Input::keySpace.down){
-            capsule.jump();
-        }
-
+        // --- ANIMATION LOGIC ---
+        // Update the blend space for walking/running based on current speed
         if(auto* blendSpace = std::get_if<Rx::Component::BlendSpace1D>(&stateMachine.animationStates["IdleWalkRun"]))
         {
-            blendSpace->animationPointState = capsule.moveSpeed/capsule.maxRunSpeed;
+            blendSpace->animationPointState = capsule.moveSpeed / capsule.maxRunSpeed;
         }
-
-        if(Input::buttonLeft.down && stateMachine.currentStateName != "Attack"){
-            stateMachine.setCurrentState("Attack");
-        }
-
     }
 
 }

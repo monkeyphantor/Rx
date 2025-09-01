@@ -61,6 +61,8 @@ namespace Rx{
         contactListener = std::make_unique<FlecsContactListener>();
 
         physicsSystem->SetContactListener(contactListener.get());
+
+        characterContactListener = std::make_unique<FlecsCharacterContactListener>(physicsSystem.get());
     }
 
     void PhysicsGameWorld::destroyPhysicsWorld() {
@@ -82,6 +84,7 @@ namespace Rx{
         world.component<Rx::Component::BoxCollider>();
         world.component<Rx::Component::PhysicsBody>();
         world.component<Rx::Component::ContactInfo>();
+        world.component<Rx::Component::Velocity>();
     }
 
     void PhysicsGameWorld::registerPhysicsObservers() {
@@ -271,6 +274,7 @@ namespace Rx{
                 char_settings.mInnerBodyShape = shape_settings->Create().Get();
                 char_settings.mInnerBodyLayer = capsule.layer; 
                 char_settings.mMaxStrength = 100.0f;
+
                 // ... Tweak other settings as needed for a WoW-like feel
 
                 // 5. Create the Jolt CharacterVirtual object and store it in our component
@@ -283,6 +287,9 @@ namespace Rx{
                     0,
                     pSystem
                 );
+
+                capsule.character->SetUserData(e.id());
+                capsule.character->SetListener(characterContactListener.get());
             });
 
             world.observer<Rx::Component::CharacterCapsule>()
@@ -316,6 +323,13 @@ namespace Rx{
 
                 capsule.updateTransform(transform);
             });
+
+        world.system<Rx::Component::Velocity, Rx::Component::CharacterCapsule>()
+        .each([&](flecs::entity e, Rx::Component::Velocity& vel, Rx::Component::CharacterCapsule& capsule) {
+            // get the linear and angular velocity from the capsule and set the Component::Velocity
+            vel.velocity = Core::toGlmVec3(capsule.character->GetLinearVelocity());
+            vel.angularVelocity = glm::vec3(0,0,0);
+        });
         world.system("PhysicsUpdate")
             .kind(onPhysicsUpdate)
             .run([&](flecs::iter& it) {

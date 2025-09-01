@@ -16,7 +16,7 @@ find_package(glm REQUIRED)
 
 # --- Build The Main Executable ---
 # Define the main executable target, "RxWorld".
-add_executable(rx_example8 main.cpp)
+add_executable(rx_example8 main.cpp NpcController.cpp)
 
 # --- Link All Libraries ---
 # Link RxWorld against all the libraries it needs. Modern CMake uses imported targets
