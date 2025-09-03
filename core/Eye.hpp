@@ -19,5 +19,7 @@ namespace Rx
         void createEye();
         void destroyEye();
         void updateEye(glm::vec3 position, glm::vec3 direction, float fov, float nearClip, float farClip);
+        std::pair<glm::mat4, glm::mat4> getEyeMatrices(glm::vec3 position, glm::vec3 direction, float fov, float nearClip, float farClip);
+
     }
 }

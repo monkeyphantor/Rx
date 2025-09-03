@@ -91,6 +91,7 @@ namespace Rx{
 
         JPH::BodyInterface& bodyInterface = getPhysicsSystem().GetBodyInterface();
 
+
         world.observer<Rx::Component::StaticRigidBody, Rx::Component::BoxCollider, Rx::Component::Transform>()
             .event(flecs::OnSet)
             .each([&](flecs::entity e, Rx::Component::StaticRigidBody& rb, Rx::Component::BoxCollider& bc, Rx::Component::Transform& tf) {
@@ -180,7 +181,6 @@ namespace Rx{
                  // Set friction and restitution directly from the component
                 settings.mFriction = rb.friction;
                 settings.mRestitution = rb.restitution;
-
                 // Create the body
                 JPH::Body *body = bodyInterface.CreateBody(settings);
                 bodyInterface.AddBody(body->GetID(), JPH::EActivation::Activate);
@@ -218,9 +218,9 @@ namespace Rx{
                 e.set<Component::PhysicsBody>({ body->GetID() });
             });
         
-        world.observer<Rx::Component::KinematicSensor, Rx::Component::BoxCollider, Rx::Component::Transform>()
+        world.observer<Rx::Component::KinematicSensor, Rx::Component::BoxCollider, Rx::Component::Transform, Rx::Component::Velocity>()
             .event(flecs::OnSet)
-            .each([&](flecs::entity e, Rx::Component::KinematicSensor& sensor, Rx::Component::BoxCollider& bc, Rx::Component::Transform& tf) {
+            .each([&](flecs::entity e, Rx::Component::KinematicSensor& sensor, Rx::Component::BoxCollider& bc, Rx::Component::Transform& tf, Rx::Component::Velocity& vel) {
                 if (e.has<Rx::Component::PhysicsBody>()) return;
 
                 JPH::Ref<JPH::Shape> boxShape = new JPH::BoxShape(Core::toJoltVec3(bc.halfExtent));
@@ -235,6 +235,9 @@ namespace Rx{
 
                 settings.mIsSensor = true; // Mark this body as a sensor
                 settings.mCollideKinematicVsNonDynamic = true; // Ensure kinematic sensors collide with non-dynamic bodies
+                settings.mLinearVelocity = Core::toJoltVec3(vel.velocity);
+                settings.mAngularVelocity = Core::toJoltVec3(vel.angularVelocity);
+                
                 // Create the body
                 JPH::Body *body = bodyInterface.CreateBody(settings);
                 bodyInterface.AddBody(body->GetID(), JPH::EActivation::Activate);
@@ -330,6 +333,35 @@ namespace Rx{
             vel.velocity = Core::toGlmVec3(capsule.character->GetLinearVelocity());
             vel.angularVelocity = glm::vec3(0,0,0);
         });
+
+        
+        // world.system<Rx::Component::Transform, Rx::Component::Velocity>()
+        //     .with<Rx::Component::KinematicSensor>()
+        //     .kind(onPhysicsUpdate)
+        //     .each([](flecs::entity e, Rx::Component::Transform& tf, Rx::Component::Velocity& vel) {
+        //         tf.translation += vel.velocity * Time::deltaTime;
+        //     });
+
+        // world.system<Rx::Component::Transform, Rx::Component::PhysicsBody>()
+        //     .with<Rx::Component::KinematicSensor>()
+        //     .kind(onPhysicsUpdate)
+        //     .each([&](flecs::entity e, Rx::Component::Transform& tf, Rx::Component::PhysicsBody& pb) {
+        //         JPH::Vec3 position = Core::toJoltVec3(tf.translation);
+        //         JPH::Quat rotation = Core::toJoltQuat(tf.toRotation());
+        //         bodyInterface.SetPositionAndRotation(pb.bodyID, position, rotation, JPH::EActivation::Activate);
+        //     });
+
+        world.system<Rx::Component::Velocity, Rx::Component::PhysicsBody>()
+             .with<Rx::Component::KinematicSensor>()
+             .kind(onPhysicsUpdate)
+             .each([&](flecs::entity e, Rx::Component::Velocity& vel, Rx::Component::PhysicsBody& pb) {
+                JPH::BodyInterface& bodyInterface = getPhysicsSystem().GetBodyInterface();
+                JPH::Vec3 linearVelocity = Core::toJoltVec3(vel.velocity);
+                JPH::Vec3 angularVelocity = Core::toJoltVec3(vel.angularVelocity);
+                bodyInterface.SetLinearAndAngularVelocity(pb.bodyID, linearVelocity, angularVelocity);
+             });
+        
+
         world.system("PhysicsUpdate")
             .kind(onPhysicsUpdate)
             .run([&](flecs::iter& it) {
@@ -338,12 +370,12 @@ namespace Rx{
                 }
             });
 
-        JPH::BodyInterface& bodyInterface = getPhysicsSystem().GetBodyInterface();
 
         world.system<Rx::Component::Transform, Rx::Component::Velocity, Rx::Component::PhysicsBody>("SyncFlecsFromJolt")
             .with<Rx::Component::DynamicRigidBody>()
             .kind(onPhysicsUpdate)
             .each([&](flecs::entity e, Rx::Component::Transform& tf, Rx::Component::Velocity& vel,Rx::Component::PhysicsBody& pb) {
+                JPH::BodyInterface& bodyInterface = getPhysicsSystem().GetBodyInterface();
                 JPH::Vec3 position;
                 JPH::Quat rotation;
                 bodyInterface.GetPositionAndRotation(pb.bodyID, position, rotation);
@@ -365,6 +397,7 @@ namespace Rx{
             .with<Rx::Component::KinematicRigidBody>()
             .kind(onPhysicsUpdate)
             .each([&](flecs::entity e, Rx::Component::Transform& tf, Rx::Component::PhysicsBody& pb) {
+                JPH::BodyInterface& bodyInterface = getPhysicsSystem().GetBodyInterface();
                 JPH::Vec3 position;
                 JPH::Quat rotation;
                 bodyInterface.GetPositionAndRotation(pb.bodyID, position, rotation);
@@ -379,45 +412,28 @@ namespace Rx{
             .with<Rx::Component::KinematicRigidBody>()
             .kind(onPhysicsUpdate)
             .each([&](flecs::entity e, Rx::Component::Velocity& vel, Rx::Component::PhysicsBody& pb) {
+                JPH::BodyInterface& bodyInterface = getPhysicsSystem().GetBodyInterface();
                 JPH::Vec3 linearVelocity = Core::toJoltVec3(vel.velocity);
                 JPH::Vec3 angularVelocity = Core::toJoltVec3(vel.angularVelocity);
                 bodyInterface.SetLinearAndAngularVelocity(pb.bodyID, linearVelocity, angularVelocity);
             });
 
 
-        world.system<Rx::Component::Transform, Rx::Component::PhysicsBody>()
-            .with<Rx::Component::KinematicSensor>()
-            .without<Rx::Component::Velocity>() 
-            .kind(onPhysicsUpdate)
-            .each([&](flecs::entity e, Rx::Component::Transform& tf, Rx::Component::PhysicsBody& pb) {
-                JPH::Vec3 position = Core::toJoltVec3(tf.translation);
-                JPH::Quat rotation = Core::toJoltQuat(tf.toRotation());
-                bodyInterface.SetPositionAndRotation(pb.bodyID, position, rotation, JPH::EActivation::Activate);
-            });
-
-        world.system<Rx::Component::Velocity, Rx::Component::PhysicsBody>()
-            .with<Rx::Component::KinematicSensor>()
-            .kind(onPhysicsUpdate)
-            .each([&](flecs::entity e, Rx::Component::Velocity& vel, Rx::Component::PhysicsBody& pb) {
-                JPH::Vec3 linearVelocity = Core::toJoltVec3(vel.velocity);
-                JPH::Vec3 angularVelocity = Core::toJoltVec3(vel.angularVelocity);
-                bodyInterface.SetLinearAndAngularVelocity(pb.bodyID, linearVelocity, angularVelocity);
-            });
-        
         world.system<Rx::Component::Transform, Rx::Component::PhysicsBody>()
             .with<Rx::Component::KinematicSensor>()
             .with<Rx::Component::Velocity>()
             .kind(onPhysicsUpdate)
             .each([&](flecs::entity e, Rx::Component::Transform& tf, Rx::Component::PhysicsBody& pb) {
+                JPH::BodyInterface& bodyInterface = getPhysicsSystem().GetBodyInterface();
                 JPH::Vec3 position;
                 JPH::Quat rotation;
                 bodyInterface.GetPositionAndRotation(pb.bodyID, position, rotation);
                 
-                tf.translation = Core::toGlmVec3(position);
-                auto rot = Core::toGlmQuat(rotation);
-                tf.angle = glm::angle(rot);
-                tf.axis = glm::axis(rot);
-            });
+                 tf.translation = Core::toGlmVec3(position);
+                 auto rot = Core::toGlmQuat(rotation);
+                 tf.angle = glm::angle(rot);
+                 tf.axis = glm::axis(rot);
+             });
 
          // System to process the collision queue
         world.system("ProcessCollisionEvents")

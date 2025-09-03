@@ -87,5 +87,11 @@ namespace Rx
             _eye.projView *= createViewMatrix(position, direction, glm::vec3(0.f,-1.f,0.f));
             memcpy(eye.pMemory, &_eye, sizeof(Eye));
         }
+
+        std::pair<glm::mat4, glm::mat4> getEyeMatrices(glm::vec3 position, glm::vec3 direction, float fov, float nearClip, float farClip){
+            glm::mat4 proj = createProjectionMatrix(fov, static_cast<float>(windowWidth) / static_cast<float>(windowHeight), nearClip, farClip) * createXMatrix();
+            glm::mat4 view = createViewMatrix(position, direction, glm::vec3(0.f, 1.f, 0.f));
+            return { proj, view };
+        }
     }
 }

@@ -28,7 +28,6 @@ namespace Rx
 
             }
 
-        private:
             glm::vec2 angle;
             float offset;
             float rotationSpeed;

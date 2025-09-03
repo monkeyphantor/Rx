@@ -45,7 +45,13 @@
 #include "NpcController.hpp"
 #include "FireballNpcLauncher.hpp"
 #include "FollowPlayer.hpp"
-
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Collision/ObjectLayer.h>
+#include "Eye.hpp"
+#include "PhysicsGameWorld.hpp"
+#include "Window.hpp"
+#include "Physics.hpp"
 #define random(lower, upper) ((static_cast<float>(rand())/static_cast<float>(RAND_MAX))*((upper)-(lower)) + (lower))
 
 struct Actors;
@@ -78,7 +84,9 @@ struct Hit{
   };
 
 static int fireballCounter = 0;
-struct Fireball{};
+struct Fireball{int i = 0;};
+struct NpcFireball{};
+struct PlayerFireball{};
 struct CanShootFireball{};
 struct FireballCountdown{
     float countDown;
@@ -87,6 +95,14 @@ struct FireballCooldown {
     float time;
 };
 
+struct Selected{
+    glm::vec3 rayImpactPosition;
+};
+
+struct CanMakeFireballRain{};
+struct FireballRainCooldown {
+    float time;
+};
 struct Actors{
 
     Actors(flecs::world& world){
@@ -106,7 +122,7 @@ struct Actors{
         });
 
 
-        Rx::Shape::ColorCube cube(glm::vec3(1.f, 1.f, 1.f), glm::vec4(0.f, 1.f, 0.f,1.f));
+        Rx::Shape::ColorCube cube(glm::vec3(1.f, 1.f, 1.f), glm::vec4(0.f, 0.f, 0.f,1.f));
 
 
         auto batchRenderer = world.entity("InstancedRender");
@@ -179,6 +195,15 @@ struct Actors{
             }
         });
 
+        world.system<FireballRainCooldown>()
+        .each([](flecs::entity e, FireballRainCooldown& cd) {
+            cd.time -= Rx::Time::deltaTime;
+            if (cd.time <= 0) {
+                e.remove<FireballRainCooldown>();
+                e.add<CanMakeFireballRain>();
+            }
+        });
+
          world.system<Rx::Component::Transform, Rx::Component::Velocity, FireballNpcLauncher>()
             .with<CanShootFireball>()
             .with<Npc>()
@@ -201,7 +226,7 @@ struct Actors{
             glm::vec3 velocity = tf.forward() * speed;
 
             // Create a fireball entity
-            auto fireball = e.world().entity((std::string("fireball")+std::to_string(fireballCounter++)).c_str());
+            auto fireball = e.world().entity((std::string("NPC_fireball")+std::to_string(fireballCounter++)).c_str());
             auto rel = e.world().lookup("InstancedColorMeshRelation");
             auto batchRenderer = e.world().lookup("Actors::InstancedRender");
             fireball.add(rel, batchRenderer);
@@ -209,49 +234,49 @@ struct Actors{
             fireball.set<Rx::Component::Velocity>({velocity, glm::vec3(0.f)});
             fireball.add<Fireball>();
             fireball.set<FireballCountdown>({ countDown });
-            fireball.add<Npc>();
+            fireball.add<NpcFireball>();
 			e.remove<CanShootFireball>(); // Remove the ability to shoot again 
             e.set<FireballCooldown>({ 3.0f }); // Set cooldown for 1.0 seconds
             launcher.shouldShoot = false; // Reset fireball launcher
          });
 
-        world.system<Rx::Component::Transform, Rx::Component::Velocity>()
-            .with<CanShootFireball>()
-            .with<Player>()
-			.kind(flecs::PreUpdate)
-            .each([&](flecs::entity e, Rx::Component::Transform& tf, const Rx::Component::Velocity& vel) {
-            if(!Rx::Input::buttonLeft.down) {
-                return; // Only create fireball if mouse button 1 is pressed
-            }
+        // world.system<Rx::Component::Transform, Rx::Component::Velocity>()
+        //     .with<CanShootFireball>()
+        //     .with<Player>()
+		// 	.kind(flecs::PreUpdate)
+        //     .each([&](flecs::entity e, Rx::Component::Transform& tf, const Rx::Component::Velocity& vel) {
+        //     if(!Rx::Input::buttonLeft.down) {
+        //         return; // Only create fireball if mouse button 1 is pressed
+        //     }
 
-            float countDown = 0.3f;
-            Rx::Component::Transform fireballTransform;
-            fireballTransform.translation = tf.translation + tf.forward() * (2 + glm::length(vel.velocity) * countDown * 2.f);
-            fireballTransform.scale = glm::vec3(1.f);
-            fireballTransform.angle = 0.f;
-            fireballTransform.axis = glm::vec3(1.f, 0.f, 0.f);
+        //     float countDown = 0.3f;
+        //     Rx::Component::Transform fireballTransform;
+        //     fireballTransform.translation = tf.translation + tf.forward() * (3 + glm::length(vel.velocity) * countDown * 2.f);
+        //     fireballTransform.scale = glm::vec3(1.f);
+        //     fireballTransform.angle = 0.f;
+        //     fireballTransform.axis = glm::vec3(1.f, 0.f, 0.f);
 
-            float speed = 60.f;
-            glm::vec3 velocity = tf.forward() * speed;
+        //     float speed = 60.f;
+        //     glm::vec3 velocity = tf.forward() * speed;
 
-            // Create a fireball entity
-            auto fireball = e.world().entity((std::string("fireball")+std::to_string(fireballCounter++)).c_str());
-            auto rel = e.world().lookup("InstancedColorMeshRelation");
-            auto batchRenderer = e.world().lookup("Actors::InstancedRender");
-            fireball.add(rel, batchRenderer);
-            fireball.set<Rx::Component::Transform>(fireballTransform);
-            fireball.set<Rx::Component::Velocity>({velocity, glm::vec3(0.f)});
-            fireball.add<Fireball>();
-            fireball.set<FireballCountdown>({ countDown });
-            fireball.add<Player>();
+        //     // Create a fireball entity
+        //     auto fireball = e.world().entity((std::string("Player_fireball")+std::to_string(fireballCounter++)).c_str());
+        //     auto rel = e.world().lookup("InstancedColorMeshRelation");
+        //     auto batchRenderer = e.world().lookup("Actors::InstancedRender");
+        //     fireball.add(rel, batchRenderer);
+        //     fireball.set<Rx::Component::Transform>(fireballTransform);
+        //     fireball.set<Rx::Component::Velocity>({velocity, glm::vec3(0.f)});
+        //     fireball.add<Fireball>();
+        //     fireball.set<FireballCountdown>({ countDown });
+        //     fireball.add<PlayerFireball>();
 
-			e.remove<CanShootFireball>(); // Remove the ability to shoot again 
-            e.set<FireballCooldown>({ 0.5f }); // Set cooldown for 0.5 seconds
-         });
+		// 	e.remove<CanShootFireball>(); // Remove the ability to shoot again 
+        //     e.set<FireballCooldown>({ 0.5f }); // Set cooldown for 0.5 seconds
+        //  });
 
         world.system<Fireball, FireballCountdown, Rx::Component::Transform, Rx::Component::Velocity>()
         .without<Rx::Component::KinematicSensor>()
-        .with<Npc>()
+        .with<NpcFireball>()
         .kind(flecs::PreUpdate)
         .each([](flecs::entity fireball, const Fireball&, FireballCountdown& countdown, Rx::Component::Transform& tf, Rx::Component::Velocity& vel) {
             countdown.countDown -= Rx::Time::deltaTime;
@@ -261,37 +286,44 @@ struct Actors{
                 fireball.add(rel, batchRenderer);
                 fireball.set<Rx::Component::Material>({ glm::vec3(random(0.f,0.5f), random(0.9f,1.f), random(0.9f,1.f)), random(0.1f,0.2f), random(0.1f,0.2f), glm::vec3(0.0f) });
                 fireball.set<Rx::Component::KinematicSensor>({ 
-                        .objectLayer =  Rx::Layers::ENEMY_SPELL, 
+                        .objectLayer =  Rx::Layers::DYNAMIC_ENVIRONMENT, 
                     });
                 fireball.set<Rx::Component::BoxCollider>({
                     .halfExtent = glm::vec3(1.f, 1.f, 1.f),
                 });
+                fireball.remove<FireballCountdown>();
             }
         });
 
         world.system<Fireball, FireballCountdown, Rx::Component::Transform, Rx::Component::Velocity>()
         .without<Rx::Component::KinematicSensor>()
-        .with<Player>()
+        .with<PlayerFireball>()
         .kind(flecs::PreUpdate)
         .each([](flecs::entity fireball, const Fireball&, FireballCountdown& countdown, Rx::Component::Transform& tf, Rx::Component::Velocity& vel) {
             countdown.countDown -= Rx::Time::deltaTime;
+
+            // Manually update the transform until the physics body takes over
+            tf.translation += vel.velocity * Rx::Time::deltaTime;
+
             if (countdown.countDown <= 0) {
                 auto rel = fireball.world().lookup("InstancedColorMeshRelation");
                 auto batchRenderer = fireball.world().lookup("Actors::InstancedRender");
                 fireball.add(rel, batchRenderer);
                 fireball.set<Rx::Component::Material>({ glm::vec3(random(0.f,0.5f), random(0.9f,1.f), random(0.9f,1.f)), random(0.1f,0.2f), random(0.1f,0.2f), glm::vec3(0.0f) });
                 fireball.set<Rx::Component::KinematicSensor>({ 
-                        .objectLayer =  Rx::Layers::PLAYER_SPELL, 
+                        .objectLayer =  Rx::Layers::DYNAMIC_ENVIRONMENT, 
                     });
                 fireball.set<Rx::Component::BoxCollider>({
                     .halfExtent = glm::vec3(1.f, 1.f, 1.f),
                 });
+                fireball.remove<FireballCountdown>();
             }
         });
-         world.system<const Fireball, Rx::Component::ContactInfo, Health>()
-         .term_at(1).second("$parent")
-         .term_at(2).src("$parent")
-         .kind(flecs::PostUpdate)
+
+         world.system<Fireball, Rx::Component::ContactInfo, Health>()
+         .term_at(1).second("$target")
+         .term_at(2).src("$target")
+         .kind(flecs::PreUpdate)
          .run([&](flecs::iter& it) {
                       
             
@@ -418,7 +450,7 @@ struct Actors{
         character.add<Rx::Component::CharacterController>();
         character.set<Rx::Component::CharacterCapsule>({Rx::Layers::PLAYER_BODY});
         character.add<LevelAsset>();
-        character.add<CanShootFireball>();
+        character.add<CanMakeFireballRain>();
         character.set<Health>({100.0f});
         character.add<Player>();
         auto camera = world.entity("WizardCamera");
@@ -456,6 +488,120 @@ struct Actors{
         }
 
        
+        world.system("RaycastSelection")
+            .kind(flecs::PreUpdate)
+            .run([&](flecs::iter& it) {
+                if (!Rx::Input::buttonLeft.pressed) {
+                    return;
+                }
 
+                while(it.next()){
+                    auto camera = it.world().lookup("Actors::WizardCamera");
+                    if (!camera.is_valid()) return;
+
+                    auto* pPhysicsGameWorld = static_cast<Rx::PhysicsGameWorld*>(it.world().get_ctx());
+                    auto& physicsSystem = pPhysicsGameWorld->getPhysicsSystem();
+                    const auto& bodyInterface = physicsSystem.GetBodyInterface();
+                    auto& narrowPhaseQuery = physicsSystem.GetNarrowPhaseQuery();
+
+                    const auto& camTf = camera.get<Rx::Component::Transform>();
+                    const auto& camComp = camera.get<Rx::Component::CharacterCamera>();
+
+                    // 1. Unproject mouse coordinates to get a world space ray
+                    glm::mat4 proj, view;
+                    std::tie(proj, view) = Rx::Core::getEyeMatrices(camTf.translation, camTf.forward(), camComp.fov, camComp.nearClip, camComp.farClip);
+                    glm::mat4 invProjView = glm::inverse(proj * view);
+
+                    float mouseX = Rx::Input::cursor.position.x;
+                    float mouseY = Rx::Input::cursor.position.y;
+
+                    // Normalized Device Coordinates
+                    float x = (2.0f * mouseX) / Rx::Core::windowWidth - 1.0f;
+                    x*=-1.f;
+                    float y = 1.0f - (2.0f * mouseY) / Rx::Core::windowHeight;
+
+                    glm::vec4 nearPoint_world = invProjView * glm::vec4(x, y, 0.0, 1.0);
+                    glm::vec4 farPoint_world = invProjView * glm::vec4(x, y, 1.0, 1.0);
+                    nearPoint_world /= nearPoint_world.w;
+                    farPoint_world /= farPoint_world.w;
+
+                    glm::vec3 rayWorldDir = glm::normalize(glm::vec3(farPoint_world - nearPoint_world));
+
+
+                    // 2. Perform Raycast
+                    JPH::RRayCast ray;
+                    ray.mOrigin = Rx::Core::toJoltVec3(camTf.translation);
+                    ray.mDirection = Rx::Core::toJoltVec3(rayWorldDir) * 1000.0f; // Ray with 1000m length
+
+                    // Define a custom filter that only hits the layers we want
+                    class SpecificLayerFilter final : public JPH::ObjectLayerFilter
+                    {
+                    public:
+                        virtual bool ShouldCollide(JPH::ObjectLayer inLayer) const override
+                        {
+                            return inLayer == Rx::Layers::STATIC_ENVIRONMENT || inLayer == Rx::Layers::ENEMY_BODY;
+                        }
+                    };
+
+                    SpecificLayerFilter layer_filter;
+                    JPH::RayCastResult result;
+                    if (narrowPhaseQuery.CastRay(ray, result, JPH::BroadPhaseLayerFilter(), layer_filter)) {
+                        flecs::entity_t hit_entity_id = bodyInterface.GetUserData(result.mBodyID);
+                        flecs::entity hit_entity(it.world(), hit_entity_id);
+
+                        if (hit_entity.is_valid()) {
+                            JPH::Vec3 hit_position_jolt = ray.mOrigin + result.mFraction * ray.mDirection;
+                            glm::vec3 hit_position_glm = Rx::Core::toGlmVec3(hit_position_jolt);
+                            hit_entity.set<Selected>({hit_position_glm});
+                            RX_LOGI("Raycast", "Selected NPC: %s", hit_entity.name().c_str());
+                        }
+                    }
+                }
+            });
+
+        world.system<Selected>()
+        .with<CanMakeFireballRain>().src(world.lookup("Actors::Wizard"))
+		.kind(flecs::PreUpdate) 
+        .each([&](flecs::entity e, Selected& selected) {
+
+            for (int i = 0; i < 30; i++) {
+                float countDown = 0.3f;
+                Rx::Component::Transform fireballTransform;
+                fireballTransform.translation = selected.rayImpactPosition + glm::vec3(random(-10.f, 10.f), 30.f + random(-10.f, 10.f), random(-10.f, 10.f));
+                fireballTransform.scale = glm::vec3(1.f);
+                fireballTransform.angle = 0.f;
+                fireballTransform.axis = glm::vec3(1.f, 0.f, 0.f);
+
+                float speed = 10.f;
+                glm::vec3 velocity = glm::vec3(random(-1.f, 1.f), -1.f, random(-1.f, 1.f)) * speed;
+
+                // Create a fireball entity
+                auto fireball = e.world().entity((std::string("Player_fireball")+std::to_string(fireballCounter++)).c_str());
+                auto rel = e.world().lookup("InstancedColorMeshRelation");
+                auto batchRenderer = e.world().lookup("Actors::InstancedRender");
+                fireball.add(rel, batchRenderer);
+                fireball.set<Rx::Component::Transform>(fireballTransform);
+                fireball.set<Rx::Component::Velocity>({velocity, glm::vec3(0.f)});
+                fireball.add<Fireball>();
+                fireball.set<FireballCountdown>({ countDown });
+                fireball.add<PlayerFireball>();
+
+                auto player = world.lookup("Actors::Wizard");
+                player.remove<CanMakeFireballRain>(); // Remove the ability to shoot again
+                player.set<FireballRainCooldown>({ 0.5f }); // Set cooldown for 0.5 seconds
+            }
+
+            e.remove<Selected>();
+        });
+
+
+        //  world.system("CleanupSelected")
+        //     .kind(flecs::PostFrame)
+        //     .multi_threaded(false)
+        //     .run([](flecs::iter& it) {
+        //         while(it.next()){
+        //             it.world().remove_all<Selected>();
+        //         }
+        //     });
     }
 };
